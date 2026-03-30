@@ -1,0 +1,85 @@
+import React, { useState } from 'react';
+import { useAppData } from '../context/AppDataContext';
+import * as XLSX from 'xlsx';
+
+export default function Gastos() {
+  const { gastos, setGastos, presupuestos } = useAppData();
+  
+  const categoriasGastos = ['Alimentación', 'Vivienda', 'Transporte', 'Servicios', 'Ocio', 'Salud', 'Educación', 'Otros'];
+
+  const [form, setForm] = useState({ desc: '', cat: 'Alimentación', monto: '', fecha: new Date().toISOString().split('T')[0], metodo: 'Tarjeta Débito', recurrente: 'No' });
+
+  // KPIs
+  const totalPresupuesto = presupuestos.reduce((s, p) => s + p.monto, 0);
+  const totalGasto = gastos.reduce((s, g) => s + Number(g.monto), 0);
+  const disponible = totalPresupuesto - totalGasto;
+  const pctUso = totalPresupuesto ? Math.round((totalGasto / totalPresupuesto) * 100) : 0;
+
+  const desglose = presupuestos.map(p => {
+    const actual = gastos.filter(g => g.cat === p.cat).reduce((s, g) => s + Number(g.monto), 0);
+    const pct = Math.min(100, Math.round((actual / p.monto) * 100)) || 0;
+    return { ...p, actual, pct };
+  });
+
+  const handleCreate = () => {
+    if(!form.desc || !form.monto) return;
+    const newRecord = { ...form, id: Date.now(), monto: Number(form.monto) };
+    setGastos([newRecord, ...gastos]);
+    setForm({ desc: '', cat: 'Alimentación', monto: '', fecha: new Date().toISOString().split('T')[0], metodo: 'Tarjeta Débito', recurrente: 'No' });
+  };
+
+  const handleDelete = (id) => {
+    setGastos(gastos.filter(i => i.id !== id));
+  };
+
+  const exportCSV = () => {
+    const ws = XLSX.utils.json_to_sheet(gastos);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Gastos");
+    XLSX.writeFile(wb, "Gastos.csv", { bookType: 'csv' });
+  };
+
+  return (
+    <div className="page active" style={{ display: 'flex' }}>
+
+      <div className="page-hdr"><div><div className="page-title">💸 Gastos</div><div className="page-sub">Presupuesto y análisis por categoría</div></div></div>
+      <div className="g4">
+        <div className="sc sc-b"><div className="sc-label">Presupuesto Total</div><div className="sc-val" style={{"color":"var(--blue)"}}>${totalPresupuesto.toLocaleString()}</div><div className="sc-icon">📋</div></div>
+        <div className="sc sc-p"><div className="sc-label">Gasto Actual</div><div className="sc-val" style={{"color":"var(--pink)"}}>${totalGasto.toLocaleString()}</div><div className="sc-change ch-dn">▼ {pctUso}% utilizado</div><div className="sc-icon">💸</div></div>
+        <div className="sc sc-o"><div className="sc-label">Disponible</div><div className="sc-val" style={{"color":"var(--orange)"}}>${disponible.toLocaleString()}</div><div className="sc-change ch-n">{100 - pctUso}% restante</div><div className="sc-icon">💡</div></div>
+        <div className="sc sc-g"><div className="sc-label">Transacciones</div><div className="sc-val" style={{"color":"var(--green)"}}>{gastos.length}</div><div className="sc-icon">🔢</div></div>
+      </div>
+      {pctUso > 80 && (
+        <div className="alert al-o"><span className="al-icon">⚠️</span><div className="al-body"><div className="al-title" style={{"color":"var(--orange)"}}>Atención</div>Has usado el {pctUso}% de tu presupuesto mensual. Quedan ${disponible.toLocaleString()} disponibles.</div></div>
+      )}
+      <div className="g2">
+        <div className="card"><div className="card-hdr"><div className="card-title">Desglose por Categoría</div></div>
+          <div className="tw"><table><thead><tr><th>Categoría</th><th className="r">Presupuesto</th><th className="r">Actual</th><th>Uso</th></tr></thead><tbody>
+            {desglose.map((d, i) => (
+              <tr key={i}><td className="tdp">{d.cat}</td><td className="tdr tdm">${d.monto.toLocaleString()}</td><td className="tdr neg">${d.actual.toLocaleString()}</td><td><div style={{"display":"flex","alignItems":"center","gap":"8px"}}><div style={{"width":"80px"}}><div className="pt"><div className="pf" style={{"width":`${d.pct}%`,"background":"var(--orange)"}}></div></div></div><span style={{"fontSize":"11.5px","color":"var(--orange)","fontWeight":"700"}}>{d.pct}%</span></div></td></tr>
+            ))}
+          </tbody></table></div>
+        </div>
+        <div className="card"><div className="card-hdr"><div className="card-title">➕ Registrar Gasto</div></div>
+          <div className="fg fg2">
+            <div className="fgrp"><label className="flbl">Descripción</label><input className="finp" placeholder="Ej: Supermercado" value={form.desc} onChange={e=>setForm({...form, desc:e.target.value})}/></div>
+            <div className="fgrp"><label className="flbl">Categoría</label><select className="fsel" value={form.cat} onChange={e=>setForm({...form, cat:e.target.value})}>{categoriasGastos.map(c => <option key={c}>{c}</option>)}</select></div>
+            <div className="fgrp"><label className="flbl">Monto (CLP)</label><input className="finp" type="number" placeholder="$0" value={form.monto} onChange={e=>setForm({...form, monto:e.target.value})}/></div>
+            <div className="fgrp"><label className="flbl">Fecha</label><input className="finp" type="date" value={form.fecha} onChange={e=>setForm({...form, fecha:e.target.value})}/></div>
+            <div className="fgrp"><label className="flbl">Método de Pago</label><select className="fsel" value={form.metodo} onChange={e=>setForm({...form, metodo:e.target.value})}><option>Tarjeta Débito</option><option>Tarjeta Crédito</option><option>Efectivo</option><option>Transferencia</option></select></div>
+            <div className="fgrp"><label className="flbl">¿Es recurrente?</label><select className="fsel" value={form.recurrente} onChange={e=>setForm({...form, recurrente:e.target.value})}><option>No</option><option>Sí, mensual</option><option>Sí, anual</option></select></div>
+          </div>
+          <div style={{"marginTop":"14px","display":"flex","gap":"8px"}}><button className="btn btn-o" onClick={handleCreate}>💾 Registrar</button><button className="btn btn-gh" onClick={() => setForm({ desc: '', cat: 'Alimentación', monto: '', fecha: new Date().toISOString().split('T')[0], metodo: 'Tarjeta Débito', recurrente: 'No' })}>Cancelar</button></div>
+        </div>
+      </div>
+      <div className="card"><div className="card-hdr"><div className="card-title">Historial de Gastos</div><button className="btn btn-gh btn-sm" onClick={exportCSV}>⬇️ Exportar CSV</button></div>
+        <div className="tw"><table><thead><tr><th>Descripción</th><th>Categoría</th><th className="r">Monto</th><th>Fecha</th><th>Método</th><th>Acciones</th></tr></thead><tbody>
+          {gastos.map((g) => (
+            <tr key={g.id}><td className="tdp">🛒 {g.desc}{g.recurrente !== 'No' ? ' 🔄' : ''}</td><td><span className="badge bp">{g.cat}</span></td><td className="tdr neg">-${Number(g.monto).toLocaleString()}</td><td className="tdm" style={{"fontSize":"12px","color":"var(--text2)"}}>{g.fecha}</td><td>{g.metodo || g.cuenta}</td><td style={{"display":"flex","gap":"5px"}}><button className="btn btn-d btn-sm" onClick={() => handleDelete(g.id)}>🗑️</button></td></tr>
+          ))}
+        </tbody></table></div>
+      </div>
+
+    </div>
+  );
+}
