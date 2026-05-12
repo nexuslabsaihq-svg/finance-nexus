@@ -1,6 +1,6 @@
 
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { auth, db, provider } from '../firebase/config'; // HasKeys ya no es necesario
+import { auth, db, googleProvider } from '../firebase/config';
 import { onAuthStateChanged, signInWithPopup, signOut, getRedirectResult } from "firebase/auth";
 import { doc, setDoc, onSnapshot, collectionGroup, query, where, getDocs } from "firebase/firestore";
 
@@ -19,9 +19,6 @@ export const AppDataProvider = ({ children }) => {
   const [activeUid, setActiveUid] = useState(null);
 
   useEffect(() => {
-    // Se elimina la comprobación de HasKeys. 
-    // Si las credenciales son incorrectas, la aplicación fallará, 
-    // lo que es el comportamiento esperado.
     const unsub = onAuthStateChanged(auth, async (u) => {
       setAuthUser(u);
       if (u && u.email) {
@@ -47,7 +44,7 @@ export const AppDataProvider = ({ children }) => {
   const loginWithGoogle = async () => {
     try {
       setAuthError(null);
-      await signInWithPopup(auth, provider);
+      await signInWithPopup(auth, googleProvider);
     } catch (e) {
       setAuthError(e.message);
     }

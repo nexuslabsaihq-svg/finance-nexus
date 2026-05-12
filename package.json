@@ -11,12 +11,16 @@
     "test": "vitest"
   },
   "dependencies": {
+    "@emailjs/browser": "^4.4.1",
     "@google/generative-ai": "^0.24.1",
+    "@gsap/react": "^2.1.2",
     "date-fns": "^4.1.0",
     "firebase": "^12.11.0",
+    "gsap": "^3.15.0",
     "jspdf": "^4.2.1",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "three": "^0.184.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {

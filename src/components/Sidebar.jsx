@@ -1,6 +1,5 @@
 import React from 'react';
 import { useAppData } from '../context/AppDataContext';
-import { BrandLogo } from '../pages/Landing';
 
 const NavItem = ({ id, icon, label, badge, sec, activePage, setActivePage }) => {
   if (sec) return <div className="nav-sec">{sec}</div>;
@@ -19,11 +18,10 @@ const NavItem = ({ id, icon, label, badge, sec, activePage, setActivePage }) => 
 export default function Sidebar() {
   const { activePage, setActivePage, logout, authUser } = useAppData();
 
-
   return (
     <nav className="sidebar">
       <div className="logo-wrap">
-        <BrandLogo size={50} />
+        <img src="/assets/brand/logo-nexus.png" alt="Finance Nexus Logo" style={{ height: "40px", objectFit: "contain" }} loading="lazy" />
         <div>
           <div className="logo-name">FinanceNexus</div>
           <div className="logo-tag">ERP Financiero Personal · CL</div>

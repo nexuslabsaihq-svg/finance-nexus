@@ -1,6 +1,6 @@
 
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider } from "firebase/auth";
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
@@ -14,19 +14,31 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-let app, auth, db, storage, provider;
+let app, db, storage;
 
 // Se intenta inicializar Firebase. Si las claves no están en el entorno, 
 // la app fallará y mostrará un error claro en la consola.
 try {
   app = initializeApp(firebaseConfig);
-  auth = getAuth(app);
   db = getFirestore(app);
   storage = getStorage(app);
-  provider = new GoogleAuthProvider();
 } catch (error) {
   console.error("Error de configuración de Firebase. Asegúrate de que tus variables de entorno (.env) estén correctamente configuradas.", error);
 }
+
+export const auth = getAuth(app);
+export const googleProvider = new GoogleAuthProvider();
+
+export const signInWithGoogle = async () => {
+  try {
+    const result = await signInWithPopup(auth, googleProvider);
+    return { success: true, user: result.user };
+  } catch (error) {
+    console.error('Error login Google:', error);
+    return { success: false, error: error.message };
+  }
+};
+
 
 // Exporta la clave de Gemini
 export const GeminaKey = import.meta.env.VITE_GEMINI_API_KEY;
@@ -34,4 +46,4 @@ export const GeminaKey = import.meta.env.VITE_GEMINI_API_KEY;
 // No se necesita `HasKeys` ya que la configuración es obligatoria.
 // Si las claves no están, la inicialización fallará, lo cual es el comportamiento esperado.
 
-export { app, auth, db, storage, provider };
+export { app, db, storage };

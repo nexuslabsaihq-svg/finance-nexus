@@ -1,6 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import ParticleField from "../components/animations/ParticleField";
+import { AuthContext } from "../context/AuthContext";
+import emailjs from '@emailjs/browser';
 
-/* ─── GOOGLE FONTS ────────────────────────────────────────────────────────── */
+gsap.registerPlugin(ScrollTrigger);
+
 const FontLink = () => (
   <style>{`
     :root {
@@ -15,19 +21,13 @@ const FontLink = () => (
       --text:    #2a2a38;
       --muted:   #7a7a90;
     }
-
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
     body { background: var(--light); color: var(--text); overflow-x: hidden; }
-
     .display { letter-spacing: -0.5px; }
-
-    /* scrollbar */
     ::-webkit-scrollbar { width: 5px; }
     ::-webkit-scrollbar-track { background: var(--dark); }
     ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
-
-    /* animations */
     @keyframes fadeUp   { from { opacity:0; transform:translateY(30px); } to { opacity:1; transform:translateY(0); } }
     @keyframes fadeIn   { from { opacity:0; } to { opacity:1; } }
     @keyframes float    { 0% { transform: translateY(0px) } 50% { transform: translateY(-15px) } 100% { transform: translateY(0px) } }
@@ -37,12 +37,9 @@ const FontLink = () => (
     @keyframes pulse    { 0%,100%{opacity:1} 50%{opacity:.5} }
     @keyframes slideIn  { from{transform:translateX(-100%)} to{transform:translateX(0)} }
     @keyframes marquee  { from{transform:translateX(0)} to{transform:translateX(-50%)} }
-
     .fade-up   { animation: fadeUp 0.65s ease both; }
     .fade-in   { animation: fadeIn 0.5s ease both; }
     .floating  { animation: float 4s ease-in-out infinite; }
-
-    /* hover states */
     .btn-coral {
       background: linear-gradient(135deg, var(--coral), var(--orange));
       color: #fff; border: none; cursor: pointer;
@@ -55,71 +52,55 @@ const FontLink = () => (
     }
     .btn-coral:hover::after { opacity:1; }
     .btn-coral:hover { transform:translateY(-2px); box-shadow:0 12px 32px rgba(232,80,58,0.4); }
-
     .btn-ghost {
       background: transparent; border: 1.5px solid rgba(255,255,255,0.35);
       color:#fff; cursor:pointer; font-weight:500;
       transition: all 0.25s;
     }
     .btn-ghost:hover { border-color:#fff; background:rgba(255,255,255,0.08); transform:translateY(-2px); }
-
     .btn-dark {
       background: var(--dark); color:#fff; border:none; cursor:pointer;
       font-weight:600; transition:all .25s;
     }
     .btn-dark:hover { background:var(--dark3); transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,0.25); }
-
     .card-hover { transition: transform .3s, box-shadow .3s; }
     .card-hover:hover { transform:translateY(-6px); box-shadow:0 24px 48px rgba(0,0,0,0.12); }
-
     .nav-link { color:rgba(255,255,255,0.75); text-decoration:none; font-size:14px; font-weight:500; transition:.2s; cursor:pointer; }
     .nav-link:hover { color:#fff; }
-
     .tag {
       display:inline-flex; align-items:center; gap:6px;
       background:rgba(232,80,58,0.12); color:var(--coral);
       border:1px solid rgba(232,80,58,0.25);
       padding:5px 14px; border-radius:999px; font-size:12px; font-weight:600; letter-spacing:1.5px;
     }
-
     .gradient-text {
       background: linear-gradient(135deg, var(--coral), var(--orange), var(--gold));
       -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip:text;
     }
-
     .section-divider {
       height:1px; background:linear-gradient(90deg,transparent,rgba(232,80,58,0.3),transparent);
       margin:0 auto; max-width:800px;
     }
-
-    /* product cards */
     .product-card {
       background:#fff; border-radius:20px; overflow:hidden;
       border:1px solid rgba(0,0,0,0.06);
       transition: transform .3s, box-shadow .3s;
     }
     .product-card:hover { transform:translateY(-8px); box-shadow:0 32px 64px rgba(0,0,0,0.14); }
-
-    /* networking card */
     .net-card {
       background: var(--dark2); border:1px solid rgba(255,255,255,0.07);
       border-radius:16px; padding:28px; transition:all .3s;
     }
     .net-card:hover { border-color:var(--coral); transform:translateY(-4px); }
-
-    /* mobile menu */
     .mobile-menu {
       position:fixed; top:0; left:0; width:280px; height:100vh;
       background:var(--dark); z-index:9999; padding:32px 24px;
       animation:slideIn .3s ease;
     }
-
-    /* marquee */
     .marquee-track { display:flex; animation:marquee 22s linear infinite; width:max-content; }
   `}</style>
 );
 
-/* ─── HELPERS ─────────────────────────────────────────────────────────────── */
 const scrollTo = (id) => {
   const container = document.getElementById("landing-scroll-container");
   const el = document.getElementById(id);
@@ -129,47 +110,6 @@ const scrollTo = (id) => {
   }
 };
 
-/* ─── BRAND LOGO COMPONENT ────────────────────────────────────────────────── */
-export const BrandLogo = ({ size = 36, style = {} }) => (
-  <svg width={size} height={size} viewBox="0 0 400 400" fill="none" style={{ filter: "drop-shadow(0 8px 24px rgba(232,80,58,0.25))", flexShrink: 0, borderRadius: "5%", ...style }}>
-    <rect width="400" height="400" fill="url(#bgGradient)" rx="32" ry="32" />
-    <g transform="translate(90, 55) scale(2)">
-      <path d="M15,65 C45,65 65,45 75,15 C75,45 55,75 15,75 Z" fill="url(#silver1)"/>
-      <path d="M25,55 C55,55 75,35 85,5 C85,35 65,65 25,65 Z" fill="url(#silver2)"/>
-      <path d="M35,45 C65,45 85,25 95,-5 C95,25 75,55 35,55 Z" fill="url(#silver3)"/>
-    </g>
-    <text x="200" y="270" fontFamily="'DM Sans', sans-serif" fontSize="44" fill="#ffffff" textAnchor="middle" letterSpacing="-1">
-      <tspan fontWeight="300" opacity="0.9">Finance </tspan>
-      <tspan fontWeight="300" opacity="0.6">| </tspan>
-      <tspan fontWeight="600">Nexus</tspan>
-    </text>
-    <rect x="100" y="295" width="200" height="2" fill="url(#lineGradient)" />
-    <text x="200" y="325" fontFamily="'DM Sans', sans-serif" fontSize="12" fontWeight="500" fill="#ffffff" opacity="0.8" textAnchor="middle" letterSpacing="1.5">
-      CONECTA · CRECE · PROSPERA
-    </text>
-    <defs>
-      <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#EA4C46"/><stop offset="100%" stopColor="#F99F5E"/>
-      </linearGradient>
-      <linearGradient id="silver1" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#7a7f85"/><stop offset="100%" stopColor="#aeb3b8"/>
-      </linearGradient>
-      <linearGradient id="silver2" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#9b9fa3"/><stop offset="100%" stopColor="#cfd3d6"/>
-      </linearGradient>
-      <linearGradient id="silver3" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#bac0c5"/><stop offset="100%" stopColor="#e8ebed"/>
-      </linearGradient>
-      <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-        <stop offset="0%" stopColor="rgba(255,255,255,0)"/>
-        <stop offset="50%" stopColor="rgba(255,255,255,1)"/>
-        <stop offset="100%" stopColor="rgba(255,255,255,0)"/>
-      </linearGradient>
-    </defs>
-  </svg>
-);
-
-/* ─── NAV ─────────────────────────────────────────────────────────────────── */
 function Navbar({ onOpenLogin }) {
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
@@ -190,12 +130,10 @@ function Navbar({ onOpenLogin }) {
         borderBottom: scrolled ? "1px solid rgba(255,255,255,0.06)" : "none",
         transition:"all .35s"
       }}>
-        {/* Logo */}
         <div style={{ display:"flex", alignItems:"center", gap:8, cursor:"pointer" }} onClick={() => scrollTo("hero")}>
-          <BrandLogo size={54} />
+          <img src="/assets/brand/logo-nexus.png" alt="Finance Nexus Logo" style={{ height: "40px", objectFit: "contain" }} loading="lazy" />
         </div>
 
-        {/* Desktop nav */}
         <div style={{ display:"flex", gap:32, alignItems:"center" }}>
           {[["Inicio","hero"],["Productos","productos"],["Aplicación","app-section"],["Contabilidad","contabilidad"],["Networking","networking"],["Agencia","agencia"],["Contacto","contacto"]].map(([l,id]) => (
             <span key={id} className="nav-link" onClick={() => scrollTo(id)}>{l}</span>
@@ -206,7 +144,7 @@ function Navbar({ onOpenLogin }) {
           <button className="btn-ghost" style={{ padding:"9px 20px", borderRadius:10, fontSize:13 }} onClick={onOpenLogin}>
             Ingresar
           </button>
-          <button className="btn-coral" style={{ padding:"9px 22px", borderRadius:10, fontSize:13 }} onClick={onOpenLogin}>
+          <button className="btn-coral hero-cta" style={{ padding:"9px 22px", borderRadius:10, fontSize:13 }} onClick={onOpenLogin}>
             Comenzar gratis
           </button>
         </div>
@@ -215,44 +153,88 @@ function Navbar({ onOpenLogin }) {
   );
 }
 
-/* ─── HERO ────────────────────────────────────────────────────────────────── */
 function Hero({ onOpenLogin }) {
+  useEffect(() => {
+    gsap.fromTo(".hero-logo", 
+      { opacity: 0, y: -40, scale: 0.8 },
+      { opacity: 1, y: 0, scale: 1, 
+        duration: 1.5, ease: "expo.out" }
+    );
+  
+    gsap.fromTo(".hero-title",
+      { opacity: 0, y: 60 },
+      { opacity: 1, y: 0, 
+        duration: 1.2, ease: "power3.out", delay: 0.3 }
+    );
+  
+    gsap.fromTo(".hero-subtitle",
+      { opacity: 0, y: 30 },
+      { opacity: 1, y: 0,
+        duration: 1, ease: "power3.out", delay: 0.6 }
+    );
+  
+    gsap.fromTo(".hero-cta",
+      { opacity: 0, scale: 0.9 },
+      { opacity: 1, scale: 1,
+        duration: 0.8, ease: "back.out(1.7)", delay: 0.9 }
+    );
+  
+    gsap.to(".hero-content", {
+      y: -80,
+      ease: "none",
+      scrollTrigger: {
+        trigger: ".hero-section",
+        start: "top top",
+        end: "bottom top",
+        scrub: 1.5
+      }
+    });
+
+    gsap.to(".bg-parallax", {
+      y: "30%",
+      ease: "none",
+      scrollTrigger: {
+        trigger: ".bg-parallax",
+        start: "top bottom",
+        end: "bottom top",
+        scrub: true
+      }
+    });
+  }, []);
+
   return (
-    <section id="hero" style={{
+    <section id="hero" className="hero-section" style={{
       minHeight:"100vh", position:"relative", overflow:"hidden",
       background:"linear-gradient(160deg, #0f0f14 0%, #1a1020 40%, #1f0f0a 100%)",
       display:"flex", alignItems:"center",
     }}>
-      {/* Decorative blobs */}
-      <div style={{ position:"absolute", top:"-10%", left:"-5%", width:600, height:600,
-        background:"radial-gradient(circle, rgba(232,80,58,0.18) 0%, transparent 70%)", borderRadius:"50%", pointerEvents:"none" }} />
-      <div style={{ position:"absolute", bottom:"5%", right:"-8%", width:500, height:500,
-        background:"radial-gradient(circle, rgba(201,168,76,0.12) 0%, transparent 70%)", borderRadius:"50%", pointerEvents:"none" }} />
-      {/* Grid overlay */}
+      <ParticleField />
+      <div className="bg-parallax" style={{ position:"absolute", top:"-10%", left:"-5%", width:600, height:600,
+        background:"radial-gradient(circle, rgba(232,80,58,0.18) 0%, transparent 70%)", borderRadius:"50%", pointerEvents:"none", willChange: "transform", transformOrigin: "center center" }} />
+      <div className="bg-parallax" style={{ position:"absolute", bottom:"5%", right:"-8%", width:500, height:500,
+        background:"radial-gradient(circle, rgba(201,168,76,0.12) 0%, transparent 70%)", borderRadius:"50%", pointerEvents:"none", willChange: "transform", transformOrigin: "center center" }} />
       <div style={{ position:"absolute", inset:0, backgroundImage:"linear-gradient(rgba(255,255,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.025) 1px,transparent 1px)", backgroundSize:"60px 60px", pointerEvents:"none" }} />
 
-      <div style={{ maxWidth:1200, margin:"0 auto", padding:"120px 40px 80px", width:"100%", position:"relative", zIndex:1 }}>
+      <div className="hero-content" style={{ maxWidth:1200, margin:"0 auto", padding:"120px 40px 80px", width:"100%", position:"relative", zIndex:1 }}>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:80, alignItems:"center" }}>
-
-          {/* LEFT */}
           <div className="fade-up">
             <span className="tag" style={{ marginBottom:24, display:"inline-flex" }}>
               <span style={{ width:6, height:6, borderRadius:"50%", background:"var(--coral)", animation:"pulse 2s infinite" }} />
               AGENCIA FINANCIERA · CHILE
             </span>
 
-            <h1 className="display" style={{ fontSize:"clamp(52px,6vw,76px)", fontWeight:800, color:"#fff", lineHeight:1.05, marginBottom:24 }}>
+            <h1 className="display hero-title" style={{ fontSize:"clamp(52px,6vw,76px)", fontWeight:800, color:"#fff", lineHeight:1.05, marginBottom:24 }}>
               La plataforma que<br/>
               <span className="gradient-text">impulsa el futuro</span><br/>
               de tu empresa
             </h1>
 
-            <p style={{ fontSize:17, color:"rgba(255,255,255,0.6)", lineHeight:1.8, marginBottom:40, maxWidth:480 }}>
+            <p className="hero-subtitle" style={{ fontSize:17, color:"rgba(255,255,255,0.6)", lineHeight:1.8, marginBottom:40, maxWidth:480 }}>
               Finance Nexus integra gestión financiera inteligente, herramientas contables avanzadas y una comunidad de networking para PYMEs chilenas — todo en un solo ecosistema.
             </p>
 
             <div style={{ display:"flex", gap:14, flexWrap:"wrap" }}>
-              <button className="btn-coral" style={{ padding:"15px 32px", borderRadius:12, fontSize:15 }} onClick={() => scrollTo("productos")}>
+              <button className="btn-coral hero-cta" style={{ padding:"15px 32px", borderRadius:12, fontSize:15 }} onClick={() => scrollTo("productos")}>
                 Explorar productos ↓
               </button>
               <button className="btn-ghost" style={{ padding:"15px 28px", borderRadius:12, fontSize:15 }} onClick={onOpenLogin}>
@@ -260,79 +242,28 @@ function Hero({ onOpenLogin }) {
               </button>
             </div>
 
-            {/* Stats row */}
-            <div style={{ display:"flex", gap:40, marginTop:56, paddingTop:40, borderTop:"1px solid rgba(255,255,255,0.08)" }}>
-              {[["800K+","PYMEs en Chile"],["15","Módulos integrados"],["3","Años de proyección"]].map(([n,l]) => (
+            <div className="stats-section" style={{ display:"flex", gap:40, marginTop:56, paddingTop:40, borderTop:"1px solid rgba(255,255,255,0.08)" }}>
+              {[["800K+","PYMEs en Chile"],["15","Módulos integrados"],["3","Años de proyección"]].map(([n,l], index) => (
                 <div key={l}>
-                  <div className="display" style={{ fontSize:34, fontWeight:700, color:"#fff" }}>{n}</div>
+                  <div className={`display ${index > 0 ? "stat-number" : ""}`} style={{ fontSize:34, fontWeight:700, color:"#fff" }}>{n}</div>
                   <div style={{ fontSize:12, color:"rgba(255,255,255,0.4)", letterSpacing:1, marginTop:2 }}>{l}</div>
                 </div>
               ))}
             </div>
+            <div className="stats-divider" />
           </div>
 
-          {/* RIGHT — Dashboard mockup */}
           <div className="floating" style={{ position:"relative" }}>
-            <div style={{
-              background:"linear-gradient(160deg,#1f1f2e,#2a1a14)",
-              borderRadius:24, padding:24, border:"1px solid rgba(232,80,58,0.2)",
-              boxShadow:"0 40px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04)",
-            }}>
-              {/* Mock toolbar */}
-              <div style={{ display:"flex", gap:6, marginBottom:20 }}>
-                {["#ef4444","#f59e0b","#22c55e"].map(c=>(
-                  <div key={c} style={{ width:10, height:10, borderRadius:"50%", background:c }} />
-                ))}
-                <div style={{ flex:1, background:"rgba(255,255,255,0.05)", borderRadius:6, height:10, marginLeft:8 }} />
-              </div>
-              {/* Mock KPI row */}
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10, marginBottom:16 }}>
-                {[["Ingresos","$7.4M","↑ 12%","#22c55e"],["Gastos","$3.2M","↓ 5%","#ef4444"],["EBITDA","$4.1M","↑ 8%","#C9A84C"]].map(([l,v,d,c])=>(
-                  <div key={l} style={{ background:"rgba(255,255,255,0.04)", borderRadius:10, padding:"12px 14px", borderLeft:`3px solid ${c}` }}>
-                    <div style={{ fontSize:9, color:"rgba(255,255,255,0.4)", letterSpacing:1 }}>{l.toUpperCase()}</div>
-                    <div style={{ fontSize:18, fontWeight:700, color:"#fff", margin:"4px 0" }}>{v}</div>
-                    <div style={{ fontSize:11, color:c, fontWeight:600 }}>{d}</div>
-                  </div>
-                ))}
-              </div>
-              {/* Mock chart bars */}
-              <div style={{ background:"rgba(255,255,255,0.03)", borderRadius:10, padding:16, marginBottom:12 }}>
-                <div style={{ fontSize:10, color:"rgba(255,255,255,0.3)", marginBottom:12, letterSpacing:1 }}>TENDENCIA · 2024</div>
-                <div style={{ display:"flex", alignItems:"flex-end", gap:6, height:70 }}>
-                  {[40,55,45,70,60,85,75,90,80,95,88,100].map((h,i)=>(
-                    <div key={i} style={{ flex:1, height:`${h}%`, background:`linear-gradient(to top, #E8503A, #FF8C42)`, borderRadius:"3px 3px 0 0", opacity:0.7+(i*0.025) }} />
-                  ))}
-                </div>
-              </div>
-              {/* Mock rows */}
-              {["Ventas Enero · $4.5M","Nómina Febrero · -$1.2M","Gastos Op. Marzo · -$520K"].map((t,i)=>(
-                <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"8px 0", borderBottom:"1px solid rgba(255,255,255,0.04)", fontSize:12, color:"rgba(255,255,255,0.55)" }}>
-                  <span>{t.split("·")[0]}</span>
-                  <span style={{ color: t.includes("-") ? "#ef4444":"#22c55e", fontWeight:600 }}>{t.split("·")[1]}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Floating badges */}
-            <div style={{ position:"absolute", top:-16, right:-16, background:"linear-gradient(135deg,#E8503A,#FF8C42)", borderRadius:12, padding:"10px 16px", boxShadow:"0 8px 24px rgba(232,80,58,0.4)" }}>
-              <div style={{ fontSize:10, color:"rgba(255,255,255,0.8)", letterSpacing:1 }}>IA FINANCIERA</div>
-              <div style={{ fontSize:18, fontWeight:700, color:"#fff" }}>Activa ✓</div>
-            </div>
-            <div style={{ position:"absolute", bottom:-16, left:-16, background:"#1f1f2e", border:"1px solid rgba(201,168,76,0.3)", borderRadius:12, padding:"10px 16px" }}>
-              <div style={{ fontSize:10, color:"rgba(255,255,255,0.5)", letterSpacing:1 }}>CONTABILIDAD</div>
-              <div style={{ fontSize:16, fontWeight:700, color:"#C9A84C" }}>Pro · Activo</div>
-            </div>
+             <img src="/assets/brand/logo-nexus.png" alt="Finance Nexus Logo" style={{ width: "100%", objectFit: "contain", opacity: 0.9, maxWidth: "100%", height: "auto" }} loading="lazy" />
           </div>
         </div>
       </div>
 
-      {/* Bottom diagonal */}
       <div style={{ position:"absolute", bottom:-2, left:0, right:0, height:80, background:"var(--light)", clipPath:"polygon(0 100%,100% 0,100% 100%)" }} />
     </section>
   );
 }
 
-/* ─── MARQUEE STRIP ──────────────────────────────────────────────────────── */
 function Strip() {
   const items = ["Gestión Financiera","Contabilidad Automatizada","IA Financiera","Networking PYMEs","Plan de Cuentas","Reportes PDF","Dashboard Ejecutivo","Ahorros & Inversiones","Control de Deudas","Estrategia Financiera"];
   const all = [...items,...items];
@@ -349,7 +280,6 @@ function Strip() {
   );
 }
 
-/* ─── PRODUCTOS ──────────────────────────────────────────────────────────── */
 function Productos() {
   const products = [
     {
@@ -378,12 +308,43 @@ function Productos() {
     },
   ];
 
+  useEffect(() => {
+    gsap.fromTo(".service-card",
+      { opacity: 0, y: 60, scale: 0.9 },
+      {
+        opacity: 1, y: 0, scale: 1,
+        duration: 0.8,
+        ease: "power3.out",
+        stagger: 0.15,
+        scrollTrigger: {
+          trigger: ".services-section",
+          start: "top 75%",
+          toggleActions: "play none none reverse"
+        }
+      }
+    );
+
+    gsap.fromTo(".services-title",
+      { opacity: 0, x: -50 },
+      {
+        opacity: 1, x: 0,
+        duration: 1,
+        ease: "power3.out",
+        scrollTrigger: {
+          trigger: ".services-section",
+          start: "top 80%",
+          toggleActions: "play none none reverse"
+        }
+      }
+    );
+  }, []);
+
   return (
-    <section id="productos" style={{ padding:"100px 40px", background:"var(--light)", minHeight:"100vh", display:"flex", flexDirection:"column", justifyContent:"center" }}>
+    <section id="productos" className="services-section" style={{ padding:"100px 40px", background:"var(--light)", minHeight:"100vh", display:"flex", flexDirection:"column", justifyContent:"center" }}>
       <div style={{ maxWidth:1200, margin:"0 auto", width:"100%" }}>
         <div style={{ textAlign:"center", marginBottom:64 }}>
           <span className="tag" style={{ marginBottom:16, display:"inline-flex" }}>NUESTROS PRODUCTOS</span>
-          <h2 className="display" style={{ fontSize:"clamp(38px,5vw,58px)", fontWeight:800, color:"var(--dark)", lineHeight:1.1 }}>
+          <h2 className="display services-title" style={{ fontSize:"clamp(38px,5vw,58px)", fontWeight:800, color:"var(--dark)", lineHeight:1.1 }}>
             Un ecosistema completo<br/>para tu empresa
           </h2>
           <p style={{ fontSize:17, color:"var(--muted)", marginTop:16, maxWidth:520, margin:"16px auto 0" }}>
@@ -393,8 +354,7 @@ function Productos() {
 
         <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:24 }}>
           {products.map((p,i) => (
-            <div key={i} className="product-card">
-              {/* Top bar */}
+            <div key={i} className="product-card service-card">
               <div style={{ height:5, background:`linear-gradient(90deg,${p.color},${p.color}88)` }} />
               <div style={{ padding:32 }}>
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:16 }}>
@@ -428,7 +388,6 @@ function Productos() {
   );
 }
 
-/* ─── APP SECTION ─────────────────────────────────────────────────────────── */
 function AppSection({ onOpenLogin }) {
   const [activeTab, setActiveTab] = useState(0);
   const tabs = [
@@ -448,16 +407,61 @@ function AppSection({ onOpenLogin }) {
       desc:"Genera reportes ejecutivos profesionales en PDF. Estado de Resultados, Balance Patrimonial y análisis de gastos con un clic.",
       color:"#8B5CF6" },
   ];
+    useEffect(() => {
+    gsap.fromTo(".stats-section",
+      { scale: 0.95 },
+      {
+        scale: 1,
+        ease: "none",
+        scrollTrigger: {
+          trigger: ".stats-section",
+          start: "top bottom",
+          end: "top top",
+          scrub: 2
+        }
+      }
+    );
+
+    document.querySelectorAll(".stat-number").forEach(el => {
+      const target = parseInt(el.textContent);
+      gsap.fromTo(el, 
+        { textContent: 0 },
+        {
+          textContent: target,
+          duration: 2,
+          ease: "power2.out",
+          snap: { textContent: 1 },
+          scrollTrigger: {
+            trigger: el,
+            start: "top 85%",
+            toggleActions: "play none none none"
+          }
+        }
+      );
+    });
+
+    gsap.fromTo(".stats-divider",
+      { scaleX: 0, transformOrigin: "left center" },
+      {
+        scaleX: 1,
+        duration: 1.5,
+        ease: "power3.out",
+        scrollTrigger: {
+          trigger: ".stats-section",
+          start: "top 70%"
+        }
+      }
+    );
+  }, []);
 
   return (
-    <section id="app-section" style={{ padding:"100px 40px", background:"var(--dark)", position:"relative", overflow:"hidden", minHeight:"100vh", display:"flex", flexDirection:"column", justifyContent:"center" }}>
+    <section id="app-section" className="stats-section" style={{ padding:"100px 40px", background:"var(--dark)", position:"relative", overflow:"hidden", minHeight:"100vh", display:"flex", flexDirection:"column", justifyContent:"center" }}>
       <div style={{ position:"absolute", top:"10%", right:"-5%", width:500, height:500,
         background:"radial-gradient(circle,rgba(232,80,58,0.1) 0%,transparent 70%)", borderRadius:"50%", pointerEvents:"none" }} />
 
       <div style={{ maxWidth:1200, margin:"0 auto", position:"relative", zIndex:1, width:"100%" }}>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:80, alignItems:"center" }}>
 
-          {/* LEFT */}
           <div>
             <span className="tag" style={{ marginBottom:20, display:"inline-flex" }}>LA APLICACIÓN</span>
             <h2 className="display" style={{ fontSize:"clamp(36px,4.5vw,52px)", fontWeight:800, color:"#fff", lineHeight:1.1, marginBottom:20 }}>
@@ -467,7 +471,6 @@ function AppSection({ onOpenLogin }) {
               Gestiona todas las finanzas de tu empresa desde un único lugar. Sin instalaciones, sin complicaciones — solo abre el navegador y empieza a trabajar.
             </p>
 
-            {/* Tabs */}
             <div style={{ display:"flex", flexDirection:"column", gap:8, marginBottom:36 }}>
               {tabs.map((t,i) => (
                 <div key={i} onClick={() => setActiveTab(i)} style={{
@@ -496,7 +499,6 @@ function AppSection({ onOpenLogin }) {
             </div>
           </div>
 
-          {/* RIGHT — Feature highlights */}
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
             {[
               { icon:"📊", title:"15 Módulos", sub:"Completos e integrados", color:"#E8503A" },
@@ -523,16 +525,13 @@ function AppSection({ onOpenLogin }) {
   );
 }
 
-/* ─── CONTABILIDAD ───────────────────────────────────────────────────────── */
 function Contabilidad() {
   return (
     <section id="contabilidad" style={{ padding:"100px 40px", background:"var(--light)", position:"relative", overflow:"hidden", minHeight:"100vh", display:"flex", flexDirection:"column", justifyContent:"center" }}>
-      {/* Decorative element */}
       <div style={{ position:"absolute", top:0, right:0, width:400, height:400,
         background:"linear-gradient(135deg,rgba(201,168,76,0.08),transparent)", borderRadius:"0 0 0 100%", pointerEvents:"none" }} />
 
       <div style={{ maxWidth:1200, margin:"0 auto", width:"100%" }}>
-        {/* TOP BADGE */}
         <div style={{ textAlign:"center", marginBottom:64 }}>
           <span style={{ display:"inline-flex", alignItems:"center", gap:6,
             background:"linear-gradient(135deg,rgba(201,168,76,0.15),rgba(201,168,76,0.05))",
@@ -549,9 +548,7 @@ function Contabilidad() {
           </p>
         </div>
 
-        {/* FEATURE GRID */}
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1.4fr 1fr", gap:24, marginBottom:24 }}>
-          {/* Left column */}
           <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
             {[
               { icon:"📋", title:"Plan de Cuentas", desc:"Estructura jerárquica completa con códigos IFRS. Activos, pasivos, patrimonio, ingresos y egresos." },
@@ -566,7 +563,6 @@ function Contabilidad() {
             ))}
           </div>
 
-          {/* Center — big highlight card */}
           <div style={{ background:"linear-gradient(160deg,#1a100a,#2a1810)", borderRadius:24, padding:36,
             border:"1px solid rgba(201,168,76,0.2)", boxShadow:"0 24px 64px rgba(0,0,0,0.2)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", textAlign:"center", minHeight:"380px" }}>
             <div style={{ width:72, height:72, background:"linear-gradient(135deg, #C9A84C, #E8503A)", borderRadius:20, display:"flex", alignItems:"center", justifyContent:"center", fontSize:32, marginBottom:24, boxShadow:"0 16px 32px rgba(201,168,76,0.25)" }}>⚖️</div>
@@ -577,7 +573,6 @@ function Contabilidad() {
             </p>
           </div>
 
-          {/* Right column */}
           <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
             {[
               { icon:"📈", title:"Gráficos en Tiempo Real", desc:"Visualiza tendencias de ingresos, egresos y utilidad con gráficos interactivos actualizados al instante." },
@@ -593,7 +588,6 @@ function Contabilidad() {
           </div>
         </div>
 
-        {/* CTA bar */}
         <div style={{ background:"linear-gradient(135deg,#E8503A,#C9A84C)", borderRadius:20, padding:"36px 48px",
           display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:24 }}>
           <div>
@@ -616,7 +610,6 @@ function Contabilidad() {
   );
 }
 
-/* ─── NETWORKING ─────────────────────────────────────────────────────────── */
 function Networking() {
   const categories = [
     { icon:"🎓", title:"Educación Financiera", desc:"Biblioteca de contenido educativo especializado en finanzas para PYMEs. Desde fundamentos contables hasta estrategias de inversión empresarial.", items:["Cursos en video","Guías descargables","Glosario financiero","Casos de estudio"] },
@@ -664,7 +657,6 @@ function Networking() {
           ))}
         </div>
 
-        {/* Bottom CTA */}
         <div style={{ marginTop:48, textAlign:"center" }}>
           <div style={{ display:"inline-flex", alignItems:"center", gap:12,
             background:"rgba(91,143,255,0.1)", border:"1px solid rgba(91,143,255,0.2)",
@@ -685,7 +677,6 @@ function Networking() {
   );
 }
 
-/* ─── PRECIOS ────────────────────────────────────────────────────────────── */
 function Precios() {
   const plans = [
     {
@@ -768,7 +759,6 @@ function Precios() {
   );
 }
 
-/* ─── TESTIMONIOS ────────────────────────────────────────────────────────── */
 function Testimonios() {
   const tests = [
     { name:"Valentina Morales", role:"Dueña · Boutique VM, Santiago", text:"Finance Nexus transformó cómo llevo las finanzas de mi tienda. Antes perdía horas en Excel, ahora tengo todo en un panel en minutos.", stars:5 },
@@ -809,7 +799,6 @@ function Testimonios() {
   );
 }
 
-/* ─── AGENCIA / EQUIPO ────────────────────────────────────────────────────── */
 function Agencia() {
   const equipo = [
     { nombre: "Visión Nexus", rol: "Liderazgo y Estrategia", emoji: "👨🏽‍💼", imgSrc: "/memoji-admin.png" },
@@ -821,7 +810,7 @@ function Agencia() {
     <section id="agencia" style={{ padding:"100px 40px", background:"#fff", minHeight:"100vh", display:"flex", flexDirection:"column", justifyContent:"center" }}>
       <div style={{ maxWidth: 1000, margin: "0 auto", width: "100%", textAlign:"center" }}>
         <div style={{ display: "flex", justifyContent: "center", marginBottom: 32 }}>
-          <BrandLogo size={100} style={{ animation: "float 4s ease-in-out infinite" }} />
+           <img src="/assets/brand/logo-nexus.png" alt="Finance Nexus Logo" style={{ height: "100px", objectFit: "contain" }} loading="lazy" />
         </div>
         <span className="tag" style={{ marginBottom:16, display:"inline-flex", background:"rgba(255,140,66,0.1)", color:"var(--orange)", border:"1px solid rgba(255,140,66,0.2)" }}>NUESTRA AGENCIA</span>
         <h2 className="display" style={{ fontSize:"clamp(34px,4vw,48px)", fontWeight:800, color:"var(--dark)", marginBottom:64, lineHeight:1.1 }}>
@@ -831,16 +820,16 @@ function Agencia() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 32 }}>
           {equipo.map((m, i) => (
             <div key={i} style={{ background: "var(--light)", borderRadius: 24, padding: "48px 20px", boxShadow: "0 12px 32px rgba(0,0,0,0.04)", transition: "all 0.3s", cursor: "pointer", animation: `float-slow ${4 + i*0.5}s ease-in-out infinite` }} onMouseOver={e=>{e.currentTarget.style.transform="scale(1.04)"; e.currentTarget.style.boxShadow="0 24px 48px rgba(0,0,0,0.08)"; e.currentTarget.style.animationPlayState="paused"}} onMouseOut={e=>{e.currentTarget.style.transform="scale(1)"; e.currentTarget.style.boxShadow="0 12px 32px rgba(0,0,0,0.04)"; e.currentTarget.style.animationPlayState="running"}}>
-              {/* Avatar Container */}
               <div style={{ width: 140, height: 140, margin: "0 auto 32px", borderRadius: "50%", background: "linear-gradient(135deg,rgba(232,80,58,0.15),rgba(255,140,66,0.25))", display: "flex", alignItems: "center", justifyContent: "center", position: "relative", border: "4px solid #fff", boxShadow: "0 16px 32px rgba(255,140,66,0.15)" }}>
                 <img 
                   src={m.imgSrc} 
                   alt={m.nombre} 
                   style={{ width: "130%", height: "130%", objectFit: "contain", position: "absolute", bottom: "-10%", zIndex:2 }} 
                   onError={(e) => {
-                    e.target.style.display = 'none';
-                    e.target.nextSibling.style.display = 'block';
+                    e.target.style.display = "none";
+                    e.target.nextSibling.style.display = "block";
                   }}
+                  loading="lazy"
                 />
                 <div style={{ display: "none", fontSize: 64, filter: "drop-shadow(0 8px 16px rgba(0,0,0,0.15))", transform: "translateY(5px)", zIndex:1 }}>
                   {m.emoji}
@@ -856,17 +845,24 @@ function Agencia() {
   );
 }
 
-/* ─── CONTACTO ───────────────────────────────────────────────────────────── */
 function Contacto() {
   const [form, setForm] = useState({ nombre:"", empresa:"", email:"", mensaje:"", producto:"Finance Nexus App" });
   const [sent, setSent] = useState(false);
+  const { authUser, onLogin } = useContext(AuthContext);
+
   const set = (k,v) => setForm(f => ({...f,[k]:v}));
 
   const send = () => {
     if(!form.nombre || !form.email) return;
-    setSent(true);
-    setTimeout(() => setSent(false), 5000);
-    setForm({ nombre:"", empresa:"", email:"", mensaje:"", producto:"Finance Nexus App" });
+
+    emailjs.send("service_id", "template_id", form, "user_id")
+      .then(() => {
+          setSent(true);
+          setTimeout(() => setSent(false), 5000);
+          setForm({ nombre:"", empresa:"", email:"", mensaje:"", producto:"Finance Nexus App" });
+      }, (error) => {
+          console.error(error.text);
+      });
   };
 
   const inputStyle = { width:"100%", padding:"12px 16px", borderRadius:10, border:"1px solid rgba(255,255,255,0.1)", background:"rgba(255,255,255,0.06)", color:"#fff", fontSize:14, outline:"none" };
@@ -878,8 +874,6 @@ function Contacto() {
 
       <div style={{ maxWidth:1000, margin:"0 auto", position:"relative", zIndex:1, width:"100%" }}>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1.3fr", gap:80, alignItems:"start" }}>
-
-          {/* LEFT */}
           <div>
             <span className="tag" style={{ marginBottom:20, display:"inline-flex" }}>CONTACTO</span>
             <h2 className="display" style={{ fontSize:"clamp(36px,4.5vw,52px)", fontWeight:800, color:"#fff", lineHeight:1.1, marginBottom:20 }}>
@@ -905,7 +899,6 @@ function Contacto() {
             </div>
           </div>
 
-          {/* RIGHT — Form */}
           <div style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:20, padding:36 }}>
             {sent ? (
               <div style={{ textAlign:"center", padding:"40px 0" }}>
@@ -959,17 +952,15 @@ function Contacto() {
   );
 }
 
-/* ─── FOOTER ─────────────────────────────────────────────────────────────── */
 function Footer() {
   const year = new Date().getFullYear();
   return (
     <footer style={{ background:"#070710", padding:"60px 40px 32px", borderTop:"1px solid rgba(255,255,255,0.04)" }}>
       <div style={{ maxWidth:1200, margin:"0 auto" }}>
         <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr", gap:48, marginBottom:56 }}>
-          {/* Brand */}
           <div>
             <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:16 }}>
-              <BrandLogo size={80} />
+              <img src="/assets/brand/logo-nexus.png" alt="Finance Nexus Logo" style={{ height: "50px", objectFit: "contain" }} loading="lazy" />
             </div>
             <p style={{ fontSize:13, color:"rgba(255,255,255,0.35)", lineHeight:1.8, maxWidth:260, marginBottom:20 }}>
               La plataforma financiera integral para PYMEs chilenas. Gestiona, analiza y crece con inteligencia.
@@ -1015,13 +1006,13 @@ function Footer() {
   );
 }
 
-/* ─── APP ROOT ───────────────────────────────────────────────────────────── */
-export default function Landing({ onLogin, authUser }) {
+export default function Landing() {
   const [showLogin, setShowLogin] = useState(false);
+  const { authUser, onLogin } = useContext(AuthContext);
 
   const handleAccess = async () => {
     if (authUser) {
-      window.location.hash = '#app';
+      window.location.hash = "#app";
       setShowLogin(false);
     } else {
       try {
@@ -1056,7 +1047,7 @@ export default function Landing({ onLogin, authUser }) {
           <div style={{ background:"linear-gradient(160deg, #181820, #0f0f14)", border:"1px solid rgba(255,140,66,0.3)", borderRadius:24, padding:"48px 40px", width:"90%", maxWidth:420, textAlign:"center", position:"relative", boxShadow:"0 32px 64px rgba(0,0,0,0.5)" }}>
             <button onClick={() => setShowLogin(false)} style={{ position:"absolute", top:20, right:20, background:"rgba(255,255,255,0.05)", border:"none", borderRadius:"50%", width:32, height:32, color:"#fff", fontSize:18, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", transition:"background .2s" }} onMouseOver={e=>e.currentTarget.style.background="rgba(255,255,255,0.1)"} onMouseOut={e=>e.currentTarget.style.background="rgba(255,255,255,0.05)"}>✕</button>
             <div style={{ display:"flex", justifyContent:"center", marginBottom:24 }}>
-              <BrandLogo size={80} />
+              <img src="/assets/brand/logo-nexus.png" alt="Finance Nexus Logo" style={{ height: "80px", objectFit: "contain" }} loading="lazy" />
             </div>
             <h3 className="display" style={{ fontSize:32, fontWeight:800, color:"#fff", marginBottom:8, lineHeight:1.1 }}>Acceso a la<br/>App Web</h3>
             <p style={{ fontSize:15, color:"rgba(255,255,255,0.5)", marginBottom:32, lineHeight:1.6 }}>Ingresa de forma segura para acceder al entorno administrativo de Finance Nexus.</p>
