@@ -45,8 +45,9 @@ export default function Header() {
       <div className="greeting">Hola, <span>{authUser?.displayName?.split(' ')[0] || 'Usuario'}</span> 👋</div>
       
       <div className="search-wrap" style={{ position: 'relative' }}>
-        <span style={{position:'absolute', left: '12px', top:'50%', transform:'translateY(-50%)'}}>🔍</span>
+        <label htmlFor="header-search" style={{position:'absolute', left: '12px', top:'50%', transform:'translateY(-50%)', cursor: 'text'}}>🔍</label>
         <input 
+          id="header-search"
           type="text" 
           placeholder="Buscar transacciones, módulos..." 
           value={searchTerm}
@@ -105,7 +106,8 @@ export default function Header() {
 
         {/* USER MENU */}
         <div ref={userRef} style={{ position: 'relative' }}>
-          <div className="user-menu-btn" onClick={() => { setUserMenuOpen(!userMenuOpen); setNotifOpen(false); }} title={`${authUser?.displayName || 'Usuario'}\n${authUser?.email || ''}`}>
+          <div className="user-menu-btn" onClick={() => { setUserMenuOpen(!userMenuOpen); setNotifOpen(false); }} title={`${authUser?.displayName || 'Usuario'}
+${authUser?.email || ''}`}>
             <div className="uma">{authUser?.photoURL ? <img src={authUser.photoURL} style={{width:'100%', height:'100%', borderRadius:'50%'}}/> : (authUser?.displayName?.[0] || 'U')}<span className="uma-online"></span></div>
             <span className="uma-name">{authUser?.displayName?.split(' ')[0] || 'Usuario'}</span>
             <span className="uma-arrow">▾</span>

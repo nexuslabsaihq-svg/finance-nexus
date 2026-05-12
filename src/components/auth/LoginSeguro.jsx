@@ -83,20 +83,28 @@ const LoginSeguro = () => {
         {!resolver ? (
           /* PASO 1: EMAIL Y PASSWORD */
           <form onSubmit={handleFirstStep} className="space-y-4">
-            <input 
-              type="email" 
-              placeholder="Email Corporativo"
-              className="w-full p-4 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#FF9A76] outline-none transition-all"
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-            <input 
-              type="password" 
-              placeholder="Contraseña"
-              className="w-full p-4 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#FF9A76] outline-none transition-all"
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            <div>
+              <label htmlFor="email" className="sr-only">Email Corporativo</label>
+              <input 
+                id="email"
+                type="email" 
+                placeholder="Email Corporativo"
+                className="w-full p-4 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#FF9A76] outline-none transition-all"
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="password" className="sr-only">Contraseña</label>
+              <input 
+                id="password"
+                type="password" 
+                placeholder="Contraseña"
+                className="w-full p-4 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#FF9A76] outline-none transition-all"
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
             <button 
               className="w-full bg-[#112D60] text-white p-4 rounded-xl font-bold hover:bg-[#0a1b3a] transition-colors"
               disabled={loading}
@@ -110,14 +118,18 @@ const LoginSeguro = () => {
             <div className="p-4 bg-orange-50 border border-orange-100 rounded-xl text-sm text-orange-800">
               Se ha enviado un código de seguridad a tu teléfono vinculado.
             </div>
-            <input 
-              type="text" 
-              placeholder="Código de 6 dígitos"
-              className="w-full p-4 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#FF9A76] text-center text-2xl tracking-[1rem] outline-none"
-              maxLength="6"
-              onChange={(e) => setVerificationCode(e.target.value)}
-              required
-            />
+            <div>
+              <label htmlFor="verification-code" className="sr-only">Código de 6 dígitos</label>
+              <input 
+                id="verification-code"
+                type="text" 
+                placeholder="Código de 6 dígitos"
+                className="w-full p-4 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#FF9A76] text-center text-2xl tracking-[1rem] outline-none"
+                maxLength="6"
+                onChange={(e) => setVerificationCode(e.target.value)}
+                required
+              />
+            </div>
             <button className="w-full bg-[#FF9A76] text-white p-4 rounded-xl font-bold hover:bg-[#e8896a] transition-colors">
               Verificar Identidad
             </button>

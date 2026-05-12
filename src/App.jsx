@@ -16,7 +16,6 @@ import IA from './pages/IA';
 import Perfil from './pages/Perfil';
 import Configuracion from './pages/Configuracion';
 import Seguridad from './pages/Seguridad';
-import ConfigSetup from './pages/ConfigSetup';
 import Landing from './pages/Landing';
 import Documentos from './pages/Documentos';
 import FlujoCaja from './pages/FlujoCaja';
@@ -30,14 +29,14 @@ const Bubbles = () => (
 );
 
 const LoadingScreen = ({ message }) => (
-  <div style={{minHeight:"100vh", background:"var(--bg)", display:"flex", alignItems:"center", justifyContent:"center"}}>
-    <div style={{color:"var(--text2)"}}>{message}</div>
+  <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <div style={{ color: "var(--text2)" }}>{message}</div>
   </div>
 );
 
 function App() {
   const {
-    activePage, period, setActivePage, HasKeys, 
+    activePage, period, setActivePage, 
     authLoading, authUser, loginWithGoogle
   } = useAppData();
 
@@ -54,17 +53,11 @@ function App() {
   // --- Main Render Logic --- //
 
   // 1. While Firebase is resolving the auth state, show a global loading screen.
-  // This is the core of the solution, preventing any rendering until the auth state is known.
   if (authLoading) {
     return <LoadingScreen message="Cargando Finance Nexus..." />;
   }
 
-  // 2. If the API keys aren't set, the config setup must be completed.
-  if (!HasKeys) {
-    return <ConfigSetup />;
-  }
-
-  // 3. At this point, authLoading is false, and authUser is either an object or null.
+  // At this point, authLoading is false, and authUser is either an object or null.
   // We can now safely determine what to render.
   const isAppView = window.location.hash === '#app';
 
