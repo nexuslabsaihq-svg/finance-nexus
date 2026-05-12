@@ -197,7 +197,7 @@ function Navbar({ onOpenLogin }) {
 
         {/* Desktop nav */}
         <div style={{ display:"flex", gap:32, alignItems:"center" }}>
-          {[["Inicio","hero"],["Productos","productos"],["Aplicación","app"],["Contabilidad","contabilidad"],["Networking","networking"],["Agencia","agencia"],["Contacto","contacto"]].map(([l,id]) => (
+          {[["Inicio","hero"],["Productos","productos"],["Aplicación","app-section"],["Contabilidad","contabilidad"],["Networking","networking"],["Agencia","agencia"],["Contacto","contacto"]].map(([l,id]) => (
             <span key={id} className="nav-link" onClick={() => scrollTo(id)}>{l}</span>
           ))}
         </div>
@@ -356,7 +356,7 @@ function Productos() {
       badge:"DISPONIBLE", label:"Finance Nexus App",
       desc:"La plataforma web de gestión financiera integral. 15 módulos completos para controlar ingresos, gastos, inversiones, deudas, ahorros y más. Con IA Financiera integrada.",
       features:["15 módulos integrados","IA Financiera (Nexus AI)","Reportes PDF ejecutivos","Gestión de múltiples cuentas","Calendario de pagos"],
-      color:"#E8503A", tag:"App Web", cta:"Conocer la app →", ctaId:"app"
+      color:"#E8503A", tag:"App Web", cta:"Conocer la app →", ctaId:"app-section"
     },
     {
       badge:"NUEVO · BETA", label:"Módulo Contabilidad",
@@ -450,7 +450,7 @@ function AppSection({ onOpenLogin }) {
   ];
 
   return (
-    <section id="app" style={{ padding:"100px 40px", background:"var(--dark)", position:"relative", overflow:"hidden", minHeight:"100vh", display:"flex", flexDirection:"column", justifyContent:"center" }}>
+    <section id="app-section" style={{ padding:"100px 40px", background:"var(--dark)", position:"relative", overflow:"hidden", minHeight:"100vh", display:"flex", flexDirection:"column", justifyContent:"center" }}>
       <div style={{ position:"absolute", top:"10%", right:"-5%", width:500, height:500,
         background:"radial-gradient(circle,rgba(232,80,58,0.1) 0%,transparent 70%)", borderRadius:"50%", pointerEvents:"none" }} />
 
@@ -606,7 +606,7 @@ function Contabilidad() {
               Comenzar gratis →
             </button>
             <button style={{ background:"rgba(255,255,255,0.2)", border:"none", color:"#fff", padding:"13px 24px", borderRadius:12, fontSize:14, cursor:"pointer", fontFamily:"'Outfit',sans-serif", fontWeight:500, transition:".25s" }}
-              onClick={() => scrollTo("app")}>
+              onClick={() => scrollTo("app-section")}>
               Ver demo
             </button>
           </div>
@@ -998,7 +998,7 @@ function Footer() {
 
         <div style={{ height:1, background:"rgba(255,255,255,0.05)", marginBottom:28 }} />
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:12 }}>
-          <div style={{ fontSize:12, color:"rgba(255,255,255,0.25)" }}>
+          <div style={{ fontSize:12, color:"rgba(255,255,255,0.2)" }}>
             © {year} Finance Nexus SpA · Santiago, Chile · Todos los derechos reservados
           </div>
           <div style={{ display:"flex", gap:16 }}>
@@ -1026,7 +1026,6 @@ export default function Landing({ onLogin, authUser }) {
     } else {
       try {
         await onLogin();
-        window.location.hash = '#app';
         setShowLogin(false);
       } catch(e) {
         console.error("Login fallido:", e);
