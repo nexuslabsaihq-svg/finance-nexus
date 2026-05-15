@@ -16,6 +16,7 @@ const LoginSeguro = () => {
   const [password, setPassword] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [resolver, setResolver] = useState(null); // Para el flujo de MFA
+  const [mfaVerificationId, setMfaVerificationId] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -49,7 +50,7 @@ const LoginSeguro = () => {
           phoneInfoOptions, 
           window.recaptchaVerifier
         );
-        sessionStorage.setItem('mfaVerificationId', verificationId);
+        setMfaVerificationId(verificationId);
       } else {
         setError('Credenciales incorrectas o error de conexión.');
       }
@@ -61,7 +62,7 @@ const LoginSeguro = () => {
   const handleMFAStep = async (e) => {
     e.preventDefault();
     try {
-      const vId = sessionStorage.getItem('mfaVerificationId');
+      const vId = mfaVerificationId;
       const cred = PhoneAuthProvider.credential(vId, verificationCode);
       const multiFactorAssertion = PhoneMultiFactorGenerator.assertion(cred);
       await resolver.resolveSignIn(multiFactorAssertion);
