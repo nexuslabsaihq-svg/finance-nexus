@@ -4,110 +4,10 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { AuthContext } from "../context/AuthContext";
 import emailjs from '@emailjs/browser';
 import Hero3D from '../components/Hero3D';
+import DashboardPreview from "../components/DashboardPreview";
+import '../landing.css';
 
 gsap.registerPlugin(ScrollTrigger);
-
-const FontLink = () => (
-  <style>{`
-    :root {
-      --coral:   #E8503A;
-      --coral2:  #FF6B4A;
-      --orange:  #FF8C42;
-      --dark:    #0f0f14;
-      --dark2:   #181820;
-      --dark3:   #1f1f2e;
-      --gold:    #C9A84C;
-      --light:   #f9f6f2;
-      --text:    #2a2a38;
-      --muted:   #7a7a90;
-    }
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { scroll-behavior: smooth; }
-    body { background: var(--light); color: var(--text); overflow-x: hidden; }
-    .display { letter-spacing: -0.5px; }
-    ::-webkit-scrollbar { width: 5px; }
-    ::-webkit-scrollbar-track { background: var(--dark); }
-    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
-    @keyframes fadeUp   { from { opacity:0; transform:translateY(30px); } to { opacity:1; transform:translateY(0); } }
-    @keyframes fadeIn   { from { opacity:0; } to { opacity:1; } }
-    @keyframes float    { 0% { transform: translateY(0px) } 50% { transform: translateY(-15px) } 100% { transform: translateY(0px) } }
-    @keyframes float-slow { 0% { transform: translateY(0px) } 50% { transform: translateY(-6px) } 100% { transform: translateY(0px) } }
-    @keyframes shimmer  { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
-    @keyframes spin     { to{transform:rotate(360deg)} }
-    @keyframes pulse    { 0%,100%{opacity:1} 50%{opacity:.5} }
-    @keyframes slideIn  { from{transform:translateX(-100%)} to{transform:translateX(0)} }
-    @keyframes marquee  { from{transform:translateX(0)} to{transform:translateX(-50%)} }
-    .fade-up   { animation: fadeUp 0.65s ease both; }
-    .fade-in   { animation: fadeIn 0.5s ease both; }
-    .floating  { animation: float 4s ease-in-out infinite; }
-    .btn-coral {
-      background: linear-gradient(135deg, var(--coral), var(--orange));
-      color: #fff; border: none; cursor: pointer;
-      font-weight: 600; letter-spacing: .5px; transition: all 0.25s;
-      position: relative; overflow: hidden;
-    }
-    .btn-coral::after {
-      content:''; position:absolute; inset:0;
-      background:rgba(255,255,255,0.12); opacity:0; transition:.25s;
-    }
-    .btn-coral:hover::after { opacity:1; }
-    .btn-coral:hover { transform:translateY(-2px); box-shadow:0 12px 32px rgba(232,80,58,0.4); }
-    .btn-ghost {
-      background: transparent; border: 1.5px solid rgba(255,255,255,0.35);
-      color:#fff; cursor:pointer; font-weight:500;
-      transition: all 0.25s;
-    }
-    .btn-ghost:hover { border-color:#fff; background:rgba(255,255,255,0.08); transform:translateY(-2px); }
-    .btn-dark {
-      background: var(--dark); color:#fff; border:none; cursor:pointer;
-      font-weight:600; transition:all .25s;
-    }
-    .btn-dark:hover { background:var(--dark3); transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,0.25); }
-    .card-hover { transition: transform .3s, box-shadow .3s; }
-    .card-hover:hover { transform:translateY(-6px); box-shadow:0 24px 48px rgba(0,0,0,0.12); }
-    .nav-link { color:rgba(255,255,255,0.75); text-decoration:none; font-size:14px; font-weight:500; transition:.2s; cursor:pointer; }
-    .nav-link:hover { color:#fff; }
-    .tag {
-      display:inline-flex; align-items:center; gap:6px;
-      background:rgba(232,80,58,0.12); color:var(--coral);
-      border:1px solid rgba(232,80,58,0.25);
-      padding:5px 14px; border-radius:999px; font-size:12px; font-weight:600; letter-spacing:1.5px;
-    }
-    .gradient-text {
-      background: linear-gradient(135deg, var(--coral), var(--orange), var(--gold));
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip:text;
-    }
-    .section-divider {
-      height:1px; background:linear-gradient(90deg,transparent,rgba(232,80,58,0.3),transparent);
-      margin:0 auto; max-width:800px;
-    }
-    .product-card {
-      background:#fff; border-radius:20px; overflow:hidden;
-      border:1px solid rgba(0,0,0,0.06);
-      transition: transform .3s, box-shadow .3s;
-    }
-    .product-card:hover { transform:translateY(-8px); box-shadow:0 32px 64px rgba(0,0,0,0.14); }
-    .net-card {
-      background: var(--dark2); border:1px solid rgba(255,255,255,0.07);
-      border-radius:16px; padding:28px; transition:all .3s;
-    }
-    .net-card:hover { border-color:var(--coral); transform:translateY(-4px); }
-    .mobile-menu {
-      position:fixed; top:0; left:0; width:280px; height:100vh;
-      background:var(--dark); z-index:9999; padding:32px 24px;
-      animation:slideIn .3s ease;
-    }
-    .marquee-track { display:flex; animation:marquee 22s linear infinite; width:max-content; }
-    .section { padding: 80px 40px; }
-
-    @media (max-width: 768px) {
-      .section { padding: 60px 20px; }
-      .services-section .grid, .app-section .grid, .contabilidad .grid, .networking .grid, .precios .grid, .testimonios .grid, .footer .grid {
-        grid-template-columns: 1fr !important;
-      }
-    }
-  `}</style>
-);
 
 const scrollTo = (id) => {
   const container = document.getElementById("landing-scroll-container");
@@ -118,7 +18,7 @@ const scrollTo = (id) => {
   }
 };
 
-function Navbar({ onOpenLogin }) {
+function Navbar({ onOpenLogin, user }) {
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
     const container = document.getElementById("landing-scroll-container");
@@ -150,19 +50,27 @@ function Navbar({ onOpenLogin }) {
         </div>
 
         <div style={{ display:"flex", gap:12, alignItems:"center" }}>
-          <button className="btn-ghost" style={{ padding:"9px 20px", borderRadius:10, fontSize:13 }} onClick={onOpenLogin}>
-            Ingresar
-          </button>
-          <button className="btn-coral hero-cta" style={{ padding:"9px 22px", borderRadius:10, fontSize:13 }} onClick={onOpenLogin}>
-            Comenzar gratis
-          </button>
+        {user ? (
+            <button className="btn-coral hero-cta" style={{ padding:"9px 22px", borderRadius:10, fontSize:13 }} onClick={() => window.location.reload()}>
+              Mi Panel
+            </button>
+          ) : (
+            <>
+            <button className="btn-ghost" style={{ padding:"9px 20px", borderRadius:10, fontSize:13 }} onClick={onOpenLogin}>
+              Ingresar
+            </button>
+            <button className="btn-coral hero-cta" style={{ padding:"9px 22px", borderRadius:10, fontSize:13 }} onClick={onOpenLogin}>
+              Comenzar gratis
+            </button>
+            </>
+          )}
         </div>
       </nav>
     </>
   );
 }
 
-function Hero({ onOpenLogin }) {
+function Hero({ onOpenLogin, user }) {
   useEffect(() => {
     // Animaciones para el texto y botones
     gsap.fromTo(".hero-title", { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: 1.2, ease: "power3.out", delay: 0.3 });
@@ -211,9 +119,9 @@ function Hero({ onOpenLogin }) {
               <button className="btn-coral hero-cta" style={{ padding:"15px 32px", borderRadius:12, fontSize:15 }} onClick={() => scrollTo("productos")}>
                 Explorar productos ↓
               </button>
-              <button className="btn-ghost" style={{ padding:"15px 28px", borderRadius:12, fontSize:15 }} onClick={onOpenLogin}>
+              {!user && <button className="btn-ghost" style={{ padding:"15px 28px", borderRadius:12, fontSize:15 }} onClick={onOpenLogin}>
                 Ingresar a la app
-              </button>
+              </button>}
             </div>
 
             <div className="stats-section" style={{ display:"flex", gap:40, marginTop:56, paddingTop:40, borderTop:"1px solid rgba(255,255,255,0.08)", justifyContent: "center" }}>
@@ -357,7 +265,7 @@ function Productos() {
   );
 }
 
-function AppSection({ onOpenLogin }) {
+function AppSection({ onOpenLogin, user }) {
   const [activeTab, setActiveTab] = useState(0);
   const tabs = [
     { label:"Dashboard", icon:"◈",
@@ -458,9 +366,9 @@ function AppSection({ onOpenLogin }) {
             </div>
 
             <div style={{ display:"flex", gap:12 }}>
-              <button className="btn-coral" style={{ padding:"13px 28px", borderRadius:12, fontSize:14 }} onClick={onOpenLogin}>
+            {!user && <button className="btn-coral" style={{ padding:"13px 28px", borderRadius:12, fontSize:14 }} onClick={onOpenLogin}>
                 Ingresar a la app →
-              </button>
+              </button>}
               <button className="btn-ghost" style={{ padding:"13px 22px", borderRadius:12, fontSize:14 }}
                 onClick={() => scrollTo("contacto")}>
                 Solicitar demo
@@ -830,7 +738,7 @@ function Contacto() {
           setTimeout(() => setSent(false), 5000);
           setForm({ nombre:"", empresa:"", email:"", mensaje:"", producto:"Finance Nexus App" });
       }, (error) => {
-        // Eliminado console.error para producción
+        // Silenciado para producción
       });
   };
 
@@ -993,13 +901,13 @@ export default function Landing() {
 
   return (
     <>
-      <FontLink />
       <div id="landing-scroll-container" style={{ height:"100vh", overflowY:"auto", overflowX:"hidden", scrollBehavior:"smooth", position:"relative" }}>
-        <Navbar onOpenLogin={() => setShowLogin(true)} />
-        <Hero onOpenLogin={() => setShowLogin(true)} />
+        <Navbar onOpenLogin={() => setShowLogin(true)} user={user} />
+        <Hero onOpenLogin={() => setShowLogin(true)} user={user}/>
+        <DashboardPreview />
         <Strip />
         <Productos />
-        <AppSection onOpenLogin={() => setShowLogin(true)} />
+        <AppSection onOpenLogin={() => setShowLogin(true)} user={user}/>
         <Contabilidad />
         <Networking />
         <Precios />
