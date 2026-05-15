@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAppData } from '../context/AppDataContext';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { jsPDF } from 'jspdf';
+import DOMPurify from 'dompurify'; // Anti-XSS
 
 export default function IA() {
   const { chatsIA, setChatsIA, ingresos, gastos, ahorros, deudas, bancos, inversiones, authUser } = useAppData();
@@ -143,7 +144,7 @@ export default function IA() {
                    borderBottomLeftRadius: msg.role !== 'user' ? '4px' : '16px'
                  }}>
                    {msg.attachment && <div style={{background:"rgba(107,127,214,0.1)", color:"var(--blue)", border:"1px solid rgba(107,127,214,0.3)", padding:"6px 10px", borderRadius:"6px", fontSize:"12px", marginBottom:"8px", display:"inline-flex", gap:"6px", alignItems:"center"}}>📎 {msg.attachment}</div>}
-                   <div style={{whiteSpace: 'pre-wrap'}} dangerouslySetInnerHTML={{__html: msg.content.replace(/\*([^*]+)\*/g, '<b>$1</b>')}} />
+                   <div style={{whiteSpace: 'pre-wrap'}} dangerouslySetInnerHTML={{__html: DOMPurify.sanitize(msg.content.replace(/\*([^*]+)\*/g, '<b>$1</b>'))}} />
                  </div>
                  <div style={{fontSize:"10px", color:"var(--text3)", marginTop:"5px"}}>{msg.time}</div>
               </div>
