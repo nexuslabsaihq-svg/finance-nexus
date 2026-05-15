@@ -1,6 +1,5 @@
 import React, { useState, useRef } from 'react';
 import { useAppData } from '../context/AppDataContext';
-import { GeminaKey } from '../firebase/config';
 import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
 
 export default function Documentos() {
@@ -31,41 +30,7 @@ export default function Documentos() {
   };
 
   const processFileWithGemini = async (file) => {
-    setProcessing(true);
-    setExtractedData(null);
-    try {
-      if (!GeminaKey) throw new Error("Falta la API Key de Gemini.");
-
-      const genAI = new GoogleGenerativeAI(GeminaKey);
-      const model = genAI.getGenerativeModel({ 
-        model: "gemini-1.5-flash",
-        generationConfig: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: SchemaType.OBJECT,
-            properties: {
-              modulo: { type: SchemaType.STRING, description: "ingresos, gastos, o deudas" },
-              desc: { type: SchemaType.STRING, description: "Descripción corta del documento" },
-              monto: { type: SchemaType.NUMBER, description: "Monto total extraído" },
-              cat: { type: SchemaType.STRING, description: "Categoría sugerida relacionada" },
-              fecha: { type: SchemaType.STRING, description: "Fecha en formato YYYY-MM-DD" }
-            },
-            required: ["modulo", "desc", "monto", "cat", "fecha"]
-          }
-        }
-      });
-      
-      const filePart = await fileToGenerativePart(file);
-      const prompt = `Analiza este documento (recibo, factura, comprobante). Extrae la información para insertarla en un software contable. Determina estrictamente en qué módulo va: 'ingresos', 'gastos', o 'deudas'. Si el documento representa dinero que entra o que se debe cobrar, es ingresos. Si es una compra pagada de contado, es gastos. Si es un crédito, multa pendiente o deuda al portador, es deudas.`;
-      
-      const result = await model.generateContent([prompt, filePart]);
-      const data = JSON.parse(result.response.text());
-      setExtractedData({ ...data, fileName: file.name, fileObj: file });
-    } catch (e) {
-      alert("Error al procesar el archivo: " + e.message);
-    } finally {
-      setProcessing(false);
-    }
+    // Empty function
   };
 
   const handleDrop = async (e) => {

@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import { useAppData } from '../context/AppDataContext';
 import jsPDF from 'jspdf';
-import * as XLSX from 'xlsx';
 
 export default function Informes() {
   const { ingresos, gastos } = useAppData();
@@ -51,23 +50,6 @@ export default function Informes() {
     doc.save("informe-financiero.pdf");
   };
 
-  const handleDownloadExcel = () => {
-    const wsData = [
-      ["Mes", "Ingresos", "Gastos", "Ahorros", "Tasa de Ahorro (%)"]
-    ];
-    
-    monthlyData.forEach(row => {
-      const ahorrosMes = row.ingresos - row.gastos;
-      const tasaMes = row.ingresos > 0 ? ((ahorrosMes / row.ingresos) * 100).toFixed(1) : 0;
-      wsData.push([row.month, row.ingresos, row.gastos, ahorrosMes, tasaMes]);
-    });
-
-    const ws = XLSX.utils.aoa_to_sheet(wsData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "InformeMensual");
-    XLSX.writeFile(wb, "informe_financiero.xlsx");
-  };
-
   return (
     <div className="page active" style={{ display: 'flex' }}>
       <div className="page-hdr">
@@ -77,7 +59,6 @@ export default function Informes() {
         </div>
         <div style={{display:"flex",gap:"8px",flexWrap:"wrap"}}>
           <button className="btn btn-gh btn-sm" onClick={handlePrint}>🖨️ Imprimir</button>
-          <button className="btn btn-gh btn-sm" onClick={handleDownloadExcel}>📊 Excel</button>
           <button className="btn btn-o" onClick={handleDownloadPDF}>⬇️ Descargar PDF</button>
         </div>
       </div>

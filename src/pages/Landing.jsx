@@ -1,9 +1,9 @@
 import { useState, useEffect, useContext } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import ParticleField from "../components/animations/ParticleField";
 import { AuthContext } from "../context/AuthContext";
 import emailjs from '@emailjs/browser';
+import Hero3D from '../components/Hero3D';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -98,6 +98,14 @@ const FontLink = () => (
       animation:slideIn .3s ease;
     }
     .marquee-track { display:flex; animation:marquee 22s linear infinite; width:max-content; }
+    .section { padding: 80px 40px; }
+
+    @media (max-width: 768px) {
+      .section { padding: 60px 20px; }
+      .services-section .grid, .app-section .grid, .contabilidad .grid, .networking .grid, .precios .grid, .testimonios .grid, .footer .grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
   `}</style>
 );
 
@@ -130,8 +138,9 @@ function Navbar({ onOpenLogin }) {
         borderBottom: scrolled ? "1px solid rgba(255,255,255,0.06)" : "none",
         transition:"all .35s"
       }}>
-        <div style={{ display:"flex", alignItems:"center", gap:8, cursor:"pointer" }} onClick={() => scrollTo("hero")}>
-          <img src="/assets/brand/logo-nexus.png" alt="Finance Nexus Logo" style={{ height: "40px", objectFit: "contain" }} loading="lazy" />
+        <div style={{ display:"flex", alignItems:"center", gap:12, cursor:"pointer" }} onClick={() => scrollTo("hero")}> 
+          <img src="/assets/brand/logo-nexus.png" alt="Finance Nexus Logo" style={{ height: "36px" }} />
+           <span style={{color:"#fff", fontSize: 18, fontWeight: 700}}>Finance Nexus</span>
         </div>
 
         <div style={{ display:"flex", gap:32, alignItems:"center" }}>
@@ -155,30 +164,12 @@ function Navbar({ onOpenLogin }) {
 
 function Hero({ onOpenLogin }) {
   useEffect(() => {
-    gsap.fromTo(".hero-logo", 
-      { opacity: 0, y: -40, scale: 0.8 },
-      { opacity: 1, y: 0, scale: 1, 
-        duration: 1.5, ease: "expo.out" }
-    );
-  
-    gsap.fromTo(".hero-title",
-      { opacity: 0, y: 60 },
-      { opacity: 1, y: 0, 
-        duration: 1.2, ease: "power3.out", delay: 0.3 }
-    );
-  
-    gsap.fromTo(".hero-subtitle",
-      { opacity: 0, y: 30 },
-      { opacity: 1, y: 0,
-        duration: 1, ease: "power3.out", delay: 0.6 }
-    );
-  
-    gsap.fromTo(".hero-cta",
-      { opacity: 0, scale: 0.9 },
-      { opacity: 1, scale: 1,
-        duration: 0.8, ease: "back.out(1.7)", delay: 0.9 }
-    );
-  
+    // Animaciones para el texto y botones
+    gsap.fromTo(".hero-title", { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: 1.2, ease: "power3.out", delay: 0.3 });
+    gsap.fromTo(".hero-subtitle", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 1, ease: "power3.out", delay: 0.6 });
+    gsap.fromTo(".hero-cta", { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 0.8, ease: "back.out(1.7)", delay: 0.9 });
+
+    // Efecto parallax para el contenido de texto al hacer scroll
     gsap.to(".hero-content", {
       y: -80,
       ease: "none",
@@ -189,51 +180,34 @@ function Hero({ onOpenLogin }) {
         scrub: 1.5
       }
     });
-
-    gsap.to(".bg-parallax", {
-      y: "30%",
-      ease: "none",
-      scrollTrigger: {
-        trigger: ".bg-parallax",
-        start: "top bottom",
-        end: "bottom top",
-        scrub: true
-      }
-    });
   }, []);
 
   return (
     <section id="hero" className="hero-section" style={{
-      minHeight:"100vh", position:"relative", overflow:"hidden",
+      height:"100vh", position:"relative", overflow:"hidden",
       background:"linear-gradient(160deg, #0f0f14 0%, #1a1020 40%, #1f0f0a 100%)",
-      display:"flex", alignItems:"center",
+      display:"flex", alignItems:"center", justifyContent: "center"
     }}>
-      <ParticleField />
-      <div className="bg-parallax" style={{ position:"absolute", top:"-10%", left:"-5%", width:600, height:600,
-        background:"radial-gradient(circle, rgba(232,80,58,0.18) 0%, transparent 70%)", borderRadius:"50%", pointerEvents:"none", willChange: "transform", transformOrigin: "center center" }} />
-      <div className="bg-parallax" style={{ position:"absolute", bottom:"5%", right:"-8%", width:500, height:500,
-        background:"radial-gradient(circle, rgba(201,168,76,0.12) 0%, transparent 70%)", borderRadius:"50%", pointerEvents:"none", willChange: "transform", transformOrigin: "center center" }} />
-      <div style={{ position:"absolute", inset:0, backgroundImage:"linear-gradient(rgba(255,255,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.025) 1px,transparent 1px)", backgroundSize:"60px 60px", pointerEvents:"none" }} />
-
-      <div className="hero-content" style={{ maxWidth:1200, margin:"0 auto", padding:"120px 40px 80px", width:"100%", position:"relative", zIndex:1 }}>
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:80, alignItems:"center" }}>
+      <Hero3D />
+      
+      <div className="hero-content" style={{ maxWidth:1200, margin:"0 auto", padding:"120px 40px 80px", width:"100%", position:"relative", zIndex:1, textAlign: "center" }}>
           <div className="fade-up">
             <span className="tag" style={{ marginBottom:24, display:"inline-flex" }}>
               <span style={{ width:6, height:6, borderRadius:"50%", background:"var(--coral)", animation:"pulse 2s infinite" }} />
               AGENCIA FINANCIERA · CHILE
             </span>
 
-            <h1 className="display hero-title" style={{ fontSize:"clamp(52px,6vw,76px)", fontWeight:800, color:"#fff", lineHeight:1.05, marginBottom:24 }}>
+            <h1 className="display hero-title" style={{ fontSize:"clamp(52px,6vw,76px)", fontWeight:800, color:"#fff", lineHeight:1.05, marginBottom:24, textShadow: "0px 5px 30px rgba(0,0,0,0.5)" }}>
               La plataforma que<br/>
               <span className="gradient-text">impulsa el futuro</span><br/>
               de tu empresa
             </h1>
 
-            <p className="hero-subtitle" style={{ fontSize:17, color:"rgba(255,255,255,0.6)", lineHeight:1.8, marginBottom:40, maxWidth:480 }}>
+            <p className="hero-subtitle" style={{ fontSize:17, color:"rgba(255,255,255,0.6)", lineHeight:1.8, marginBottom:40, maxWidth:520, margin: "0 auto 40px" }}>
               Finance Nexus integra gestión financiera inteligente, herramientas contables avanzadas y una comunidad de networking para PYMEs chilenas — todo en un solo ecosistema.
             </p>
 
-            <div style={{ display:"flex", gap:14, flexWrap:"wrap" }}>
+            <div style={{ display:"flex", gap:14, flexWrap:"wrap", justifyContent: "center" }}>
               <button className="btn-coral hero-cta" style={{ padding:"15px 32px", borderRadius:12, fontSize:15 }} onClick={() => scrollTo("productos")}>
                 Explorar productos ↓
               </button>
@@ -242,7 +216,7 @@ function Hero({ onOpenLogin }) {
               </button>
             </div>
 
-            <div className="stats-section" style={{ display:"flex", gap:40, marginTop:56, paddingTop:40, borderTop:"1px solid rgba(255,255,255,0.08)" }}>
+            <div className="stats-section" style={{ display:"flex", gap:40, marginTop:56, paddingTop:40, borderTop:"1px solid rgba(255,255,255,0.08)", justifyContent: "center" }}>
               {[["800K+","PYMEs en Chile"],["15","Módulos integrados"],["3","Años de proyección"]].map(([n,l], index) => (
                 <div key={l}>
                   <div className={`display ${index > 0 ? "stat-number" : ""}`} style={{ fontSize:34, fontWeight:700, color:"#fff" }}>{n}</div>
@@ -252,11 +226,6 @@ function Hero({ onOpenLogin }) {
             </div>
             <div className="stats-divider" />
           </div>
-
-          <div className="floating" style={{ position:"relative" }}>
-             <img src="/assets/brand/logo-nexus.png" alt="Finance Nexus Logo" style={{ width: "100%", objectFit: "contain", opacity: 0.9, maxWidth: "100%", height: "auto" }} loading="lazy" />
-          </div>
-        </div>
       </div>
 
       <div style={{ position:"absolute", bottom:-2, left:0, right:0, height:80, background:"var(--light)", clipPath:"polygon(0 100%,100% 0,100% 100%)" }} />
@@ -340,7 +309,7 @@ function Productos() {
   }, []);
 
   return (
-    <section id="productos" className="services-section" style={{ padding:"100px 40px", background:"var(--light)", minHeight:"100vh", display:"flex", flexDirection:"column", justifyContent:"center" }}>
+    <section id="productos" className="services-section section" style={{ background:"var(--light)" }}>
       <div style={{ maxWidth:1200, margin:"0 auto", width:"100%" }}>
         <div style={{ textAlign:"center", marginBottom:64 }}>
           <span className="tag" style={{ marginBottom:16, display:"inline-flex" }}>NUESTROS PRODUCTOS</span>
@@ -352,7 +321,7 @@ function Productos() {
           </p>
         </div>
 
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:24 }}>
+        <div className="grid" style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:24 }}>
           {products.map((p,i) => (
             <div key={i} className="product-card service-card">
               <div style={{ height:5, background:`linear-gradient(90deg,${p.color},${p.color}88)` }} />
@@ -455,12 +424,12 @@ function AppSection({ onOpenLogin }) {
   }, []);
 
   return (
-    <section id="app-section" className="stats-section" style={{ padding:"100px 40px", background:"var(--dark)", position:"relative", overflow:"hidden", minHeight:"100vh", display:"flex", flexDirection:"column", justifyContent:"center" }}>
+    <section id="app-section" className="app-section section" style={{ background:"var(--dark)", position:"relative", overflow:"hidden" }}>
       <div style={{ position:"absolute", top:"10%", right:"-5%", width:500, height:500,
         background:"radial-gradient(circle,rgba(232,80,58,0.1) 0%,transparent 70%)", borderRadius:"50%", pointerEvents:"none" }} />
 
       <div style={{ maxWidth:1200, margin:"0 auto", position:"relative", zIndex:1, width:"100%" }}>
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:80, alignItems:"center" }}>
+        <div className="grid" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:80, alignItems:"center" }}>
 
           <div>
             <span className="tag" style={{ marginBottom:20, display:"inline-flex" }}>LA APLICACIÓN</span>
@@ -499,7 +468,7 @@ function AppSection({ onOpenLogin }) {
             </div>
           </div>
 
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
+          <div className="grid" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
             {[
               { icon:"📊", title:"15 Módulos", sub:"Completos e integrados", color:"#E8503A" },
               { icon:"🤖", title:"Nexus AI", sub:"Asistente inteligente", color:"#5B8FFF" },
@@ -527,7 +496,7 @@ function AppSection({ onOpenLogin }) {
 
 function Contabilidad() {
   return (
-    <section id="contabilidad" style={{ padding:"100px 40px", background:"var(--light)", position:"relative", overflow:"hidden", minHeight:"100vh", display:"flex", flexDirection:"column", justifyContent:"center" }}>
+    <section id="contabilidad" className="contabilidad section" style={{ background:"var(--light)", position:"relative", overflow:"hidden" }}>
       <div style={{ position:"absolute", top:0, right:0, width:400, height:400,
         background:"linear-gradient(135deg,rgba(201,168,76,0.08),transparent)", borderRadius:"0 0 0 100%", pointerEvents:"none" }} />
 
@@ -548,7 +517,7 @@ function Contabilidad() {
           </p>
         </div>
 
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1.4fr 1fr", gap:24, marginBottom:24 }}>
+        <div className="grid" style={{ display:"grid", gridTemplateColumns:"1fr 1.4fr 1fr", gap:24, marginBottom:24 }}>
           <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
             {[
               { icon:"📋", title:"Plan de Cuentas", desc:"Estructura jerárquica completa con códigos IFRS. Activos, pasivos, patrimonio, ingresos y egresos." },
@@ -621,7 +590,7 @@ function Networking() {
   ];
 
   return (
-    <section id="networking" style={{ padding:"100px 40px", background:"var(--dark2)", position:"relative", overflow:"hidden", minHeight:"100vh", display:"flex", flexDirection:"column", justifyContent:"center" }}>
+    <section id="networking" className="networking section" style={{ background:"var(--dark2)", position:"relative", overflow:"hidden" }}>
       <div style={{ position:"absolute", top:"20%", left:"-10%", width:600, height:600,
         background:"radial-gradient(circle,rgba(91,143,255,0.08) 0%,transparent 70%)", borderRadius:"50%", pointerEvents:"none" }} />
 
@@ -640,7 +609,7 @@ function Networking() {
           </p>
         </div>
 
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:20 }}>
+        <div className="grid" style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:20 }}>
           {categories.map((c,i) => (
             <div key={i} className="net-card">
               <div style={{ fontSize:36, marginBottom:14 }}>{c.icon}</div>
@@ -700,7 +669,7 @@ function Precios() {
   ];
 
   return (
-    <section id="precios" style={{ padding:"100px 40px", background:"var(--light)", minHeight:"100vh", display:"flex", flexDirection:"column", justifyContent:"center" }}>
+    <section id="precios" className="precios section" style={{ background:"var(--light)" }}>
       <div style={{ maxWidth:1100, margin:"0 auto", width:"100%" }}>
         <div style={{ textAlign:"center", marginBottom:64 }}>
           <span className="tag" style={{ marginBottom:16, display:"inline-flex" }}>PLANES Y PRECIOS</span>
@@ -710,7 +679,7 @@ function Precios() {
           <p style={{ fontSize:16, color:"var(--muted)", marginTop:12 }}>Sin compromisos. Cancela cuando quieras.</p>
         </div>
 
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:20 }}>
+        <div className="grid" style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:20 }}>
           {plans.map((p,i) => (
             <div key={i} style={{
               background: p.highlight ? "linear-gradient(160deg,#1a100a,#2a1810)" : "#fff",
@@ -767,7 +736,7 @@ function Testimonios() {
   ];
 
   return (
-    <section style={{ padding:"80px 40px", background:"#f0ede8" }}>
+    <section className="testimonios section" style={{ background:"#f0ede8" }}>
       <div style={{ maxWidth:1100, margin:"0 auto" }}>
         <div style={{ textAlign:"center", marginBottom:56 }}>
           <span className="tag" style={{ marginBottom:16, display:"inline-flex" }}>TESTIMONIOS</span>
@@ -775,7 +744,7 @@ function Testimonios() {
             Lo que dicen nuestros clientes
           </h2>
         </div>
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:20 }}>
+        <div className="grid" style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:20 }}>
           {tests.map((t,i) => (
             <div key={i} className="card-hover" style={{ background:"#fff", borderRadius:20, padding:28, border:"1px solid rgba(0,0,0,0.06)" }}>
               <div style={{ display:"flex", gap:2, marginBottom:16 }}>
@@ -807,7 +776,7 @@ function Agencia() {
   ];
 
   return (
-    <section id="agencia" style={{ padding:"100px 40px", background:"#fff", minHeight:"100vh", display:"flex", flexDirection:"column", justifyContent:"center" }}>
+    <section id="agencia" className="section" style={{ background:"#fff" }}>
       <div style={{ maxWidth: 1000, margin: "0 auto", width: "100%", textAlign:"center" }}>
         <div style={{ display: "flex", justifyContent: "center", marginBottom: 32 }}>
            <img src="/assets/brand/logo-nexus.png" alt="Finance Nexus Logo" style={{ height: "100px", objectFit: "contain" }} loading="lazy" />
@@ -817,7 +786,7 @@ function Agencia() {
           El equipo detrás de Finance Nexus
         </h2>
         
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 32 }}>
+        <div className="grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 32 }}>
           {equipo.map((m, i) => (
             <div key={i} style={{ background: "var(--light)", borderRadius: 24, padding: "48px 20px", boxShadow: "0 12px 32px rgba(0,0,0,0.04)", transition: "all 0.3s", cursor: "pointer", animation: `float-slow ${4 + i*0.5}s ease-in-out infinite` }} onMouseOver={e=>{e.currentTarget.style.transform="scale(1.04)"; e.currentTarget.style.boxShadow="0 24px 48px rgba(0,0,0,0.08)"; e.currentTarget.style.animationPlayState="paused"}} onMouseOut={e=>{e.currentTarget.style.transform="scale(1)"; e.currentTarget.style.boxShadow="0 12px 32px rgba(0,0,0,0.04)"; e.currentTarget.style.animationPlayState="running"}}>
               <div style={{ width: 140, height: 140, margin: "0 auto 32px", borderRadius: "50%", background: "linear-gradient(135deg,rgba(232,80,58,0.15),rgba(255,140,66,0.25))", display: "flex", alignItems: "center", justifyContent: "center", position: "relative", border: "4px solid #fff", boxShadow: "0 16px 32px rgba(255,140,66,0.15)" }}>
@@ -848,7 +817,7 @@ function Agencia() {
 function Contacto() {
   const [form, setForm] = useState({ nombre:"", empresa:"", email:"", mensaje:"", producto:"Finance Nexus App" });
   const [sent, setSent] = useState(false);
-  const { authUser, onLogin } = useContext(AuthContext);
+  const { user, googleSignIn } = useContext(AuthContext);
 
   const set = (k,v) => setForm(f => ({...f,[k]:v}));
 
@@ -861,19 +830,19 @@ function Contacto() {
           setTimeout(() => setSent(false), 5000);
           setForm({ nombre:"", empresa:"", email:"", mensaje:"", producto:"Finance Nexus App" });
       }, (error) => {
-          console.error(error.text);
+        // Eliminado console.error para producción
       });
   };
 
   const inputStyle = { width:"100%", padding:"12px 16px", borderRadius:10, border:"1px solid rgba(255,255,255,0.1)", background:"rgba(255,255,255,0.06)", color:"#fff", fontSize:14, outline:"none" };
 
   return (
-    <section id="contacto" style={{ padding:"100px 40px", background:"var(--dark)", position:"relative", overflow:"hidden", minHeight:"100vh", display:"flex", flexDirection:"column", justifyContent:"center" }}>
+    <section id="contacto" className="section" style={{ background:"var(--dark)", position:"relative", overflow:"hidden" }}>
       <div style={{ position:"absolute", bottom:"-5%", right:"-5%", width:500, height:500,
         background:"radial-gradient(circle,rgba(232,80,58,0.12) 0%,transparent 70%)", borderRadius:"50%", pointerEvents:"none" }} />
 
       <div style={{ maxWidth:1000, margin:"0 auto", position:"relative", zIndex:1, width:"100%" }}>
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1.3fr", gap:80, alignItems:"start" }}>
+        <div className="grid" style={{ display:"grid", gridTemplateColumns:"1fr 1.3fr", gap:80, alignItems:"start" }}>
           <div>
             <span className="tag" style={{ marginBottom:20, display:"inline-flex" }}>CONTACTO</span>
             <h2 className="display" style={{ fontSize:"clamp(36px,4.5vw,52px)", fontWeight:800, color:"#fff", lineHeight:1.1, marginBottom:20 }}>
@@ -955,9 +924,9 @@ function Contacto() {
 function Footer() {
   const year = new Date().getFullYear();
   return (
-    <footer style={{ background:"#070710", padding:"60px 40px 32px", borderTop:"1px solid rgba(255,255,255,0.04)" }}>
+    <footer className="footer" style={{ background:"#070710", padding:"60px 40px 32px", borderTop:"1px solid rgba(255,255,255,0.04)" }}>
       <div style={{ maxWidth:1200, margin:"0 auto" }}>
-        <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr", gap:48, marginBottom:56 }}>
+        <div className="grid" style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr", gap:48, marginBottom:56 }}>
           <div>
             <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:16 }}>
               <img src="/assets/brand/logo-nexus.png" alt="Finance Nexus Logo" style={{ height: "50px", objectFit: "contain" }} loading="lazy" />
@@ -1008,19 +977,17 @@ function Footer() {
 
 export default function Landing() {
   const [showLogin, setShowLogin] = useState(false);
-  const { authUser, onLogin } = useContext(AuthContext);
+  const { user, googleSignIn } = useContext(AuthContext);
 
   const handleAccess = async () => {
-    if (authUser) {
-      window.location.hash = "#app";
+    if (user) {
       setShowLogin(false);
-    } else {
-      try {
-        await onLogin();
-        setShowLogin(false);
-      } catch(e) {
-        console.error("Login fallido:", e);
-      }
+      return;
+    }
+    try {
+      await googleSignIn();
+    } catch(e) {
+      // Silenciado para producción
     }
   };
 
@@ -1052,8 +1019,8 @@ export default function Landing() {
             <h3 className="display" style={{ fontSize:32, fontWeight:800, color:"#fff", marginBottom:8, lineHeight:1.1 }}>Acceso a la<br/>App Web</h3>
             <p style={{ fontSize:15, color:"rgba(255,255,255,0.5)", marginBottom:32, lineHeight:1.6 }}>Ingresa de forma segura para acceder al entorno administrativo de Finance Nexus.</p>
             <button onClick={handleAccess} style={{ width:"100%", padding:"16px", borderRadius:14, background:"#fff", color:"#0f0f14", fontSize:16, fontWeight:700, border:"none", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:12, transition:"all .2s", boxShadow:"0 8px 16px rgba(255,255,255,0.1)" }} onMouseOver={e=>{e.currentTarget.style.transform="translateY(-2px)"; e.currentTarget.style.boxShadow="0 12px 24px rgba(255,255,255,0.2)"}} onMouseOut={e=>{e.currentTarget.style.transform="translateY(0)"; e.currentTarget.style.boxShadow="0 8px 16px rgba(255,255,255,0.1)"}}>
-              {!authUser ? <svg viewBox="0 0 24 24" width="22" height="22" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/><path d="M1 1h22v22H1z" fill="none"/></svg> : "🚀"}
-              {authUser ? "Abrir Aplicación" : "Ingresar con Google"}
+              {!user ? <svg viewBox="0 0 24 24" width="22" height="22" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/><path d="M1 1h22v22H1z" fill="none"/></svg> : "🚀"}
+              {user ? "Abrir Aplicación" : "Ingresar con Google"}
             </button>
           </div>
         </div>

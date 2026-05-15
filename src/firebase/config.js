@@ -34,14 +34,10 @@ export const signInWithGoogle = async () => {
     const result = await signInWithPopup(auth, googleProvider);
     return { success: true, user: result.user };
   } catch (error) {
-    console.error('Error login Google:', error);
+    // Silenciado para producción
     return { success: false, error: error.message };
   }
 };
-
-
-// Exporta la clave de Gemini
-export const GeminaKey = import.meta.env.VITE_GEMINI_API_KEY;
 
 // No se necesita `HasKeys` ya que la configuración es obligatoria.
 // Si las claves no están, la inicialización fallará, lo cual es el comportamiento esperado.

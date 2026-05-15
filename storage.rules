@@ -1,0 +1,26 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Deniega el acceso a todos los archivos por defecto.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+
+    // PERMITE LA LECTURA PÚBLICA PARA AVATARES
+    // Cualquiera puede leer los avatares, pero solo los usuarios autenticados pueden subir el suyo.
+    match /avatars/{userId}/{fileName} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId
+                   && request.resource.size < 5 * 1024 * 1024
+                   && request.resource.contentType.matches('image/jpeg|image/png|image/webp|image/gif');
+    }
+
+    // PERMITE LA LECTURA Y ESCRITURA DE DOCUMENTOS PRIVADOS DEL USUARIO
+    // Solo el usuario autenticado puede leer/escribir en su carpeta privada.
+    match /private/{userId}/{document=**} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}

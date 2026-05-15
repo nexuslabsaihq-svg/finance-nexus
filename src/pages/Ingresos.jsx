@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useAppData } from '../context/AppDataContext';
-import * as XLSX from 'xlsx';
 
 export default function Ingresos() {
   const { ingresos, setIngresos } = useAppData();
@@ -20,13 +19,6 @@ export default function Ingresos() {
 
   const handleDelete = (id) => {
     setIngresos(ingresos.filter(i => i.id !== id));
-  };
-
-  const exportCSV = () => {
-    const ws = XLSX.utils.json_to_sheet(ingresos);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Ingresos");
-    XLSX.writeFile(wb, "Ingresos.csv", { bookType: 'csv' });
   };
 
   return (
@@ -59,7 +51,7 @@ export default function Ingresos() {
         </div>
         <div style={{"marginTop":"14px","display":"flex","gap":"8px"}}><button className="btn btn-o" onClick={handleCreate}>💾 Guardar</button><button className="btn btn-gh" onClick={() => setForm({ desc: '', cat: 'Salario', monto: '', fecha: new Date().toISOString().split('T')[0], fuente: 'Banco Santander', notas: '' })}>Cancelar</button></div>
       </div>
-      <div className="card"><div className="card-hdr"><div className="card-title">Historial de Ingresos</div><button className="btn btn-gh btn-sm" onClick={exportCSV}>⬇️ Exportar CSV</button></div>
+      <div className="card"><div className="card-hdr"><div className="card-title">Historial de Ingresos</div></div>
         <div className="tw"><table><thead><tr><th>Descripción</th><th>Categoría</th><th className="r">Monto</th><th>Fecha</th><th>Fuente</th><th>Acciones</th></tr></thead><tbody>
           {ingresos.map(i => (
             <tr key={i.id}><td className="tdp">💰 {i.desc}</td><td><span className="badge bb">{i.cat}</span></td><td className="tdr pos">+${Number(i.monto).toLocaleString()}</td><td className="tdm" style={{"fontSize":"12px","color":"var(--text2)"}}>{i.fecha}</td><td>{i.fuente}</td><td style={{"display":"flex","gap":"5px"}}><button className="btn btn-d btn-sm" onClick={()=>handleDelete(i.id)}>🗑️</button></td></tr>

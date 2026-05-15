@@ -1,17 +1,15 @@
 import React, { useState } from 'react';
-import { signInWithGoogle } from '../firebase/config';
-import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
-  const navigate = useNavigate();
+  const { googleSignIn } = useAuth();
   const [isHovered, setIsHovered] = useState(false);
   const [authError, setAuthError] = useState(null);
 
   const handleGoogleLogin = async () => {
-    const result = await signInWithGoogle();
-    if (result.success) {
-      navigate('/dashboard');
-    } else {
+    try {
+      await googleSignIn();
+    } catch (error) {
       setAuthError('Error al ingresar. Intenta de nuevo.');
       alert('Error al ingresar. Intenta de nuevo.');
     }

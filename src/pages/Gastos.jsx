@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useAppData } from '../context/AppDataContext';
-import * as XLSX from 'xlsx';
 
 export default function Gastos() {
   const { gastos, setGastos, presupuestos } = useAppData();
@@ -30,13 +29,6 @@ export default function Gastos() {
 
   const handleDelete = (id) => {
     setGastos(gastos.filter(i => i.id !== id));
-  };
-
-  const exportCSV = () => {
-    const ws = XLSX.utils.json_to_sheet(gastos);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Gastos");
-    XLSX.writeFile(wb, "Gastos.csv", { bookType: 'csv' });
   };
 
   return (
@@ -72,7 +64,7 @@ export default function Gastos() {
           <div style={{"marginTop":"14px","display":"flex","gap":"8px"}}><button className="btn btn-o" onClick={handleCreate}>💾 Registrar</button><button className="btn btn-gh" onClick={() => setForm({ desc: '', cat: 'Alimentación', monto: '', fecha: new Date().toISOString().split('T')[0], metodo: 'Tarjeta Débito', recurrente: 'No' })}>Cancelar</button></div>
         </div>
       </div>
-      <div className="card"><div className="card-hdr"><div className="card-title">Historial de Gastos</div><button className="btn btn-gh btn-sm" onClick={exportCSV}>⬇️ Exportar CSV</button></div>
+      <div className="card"><div className="card-hdr"><div className="card-title">Historial de Gastos</div></div>
         <div className="tw"><table><thead><tr><th>Descripción</th><th>Categoría</th><th className="r">Monto</th><th>Fecha</th><th>Método</th><th>Acciones</th></tr></thead><tbody>
           {gastos.map((g) => (
             <tr key={g.id}><td className="tdp">🛒 {g.desc}{g.recurrente !== 'No' ? ' 🔄' : ''}</td><td><span className="badge bp">{g.cat}</span></td><td className="tdr neg">-${Number(g.monto).toLocaleString()}</td><td className="tdm" style={{"fontSize":"12px","color":"var(--text2)"}}>{g.fecha}</td><td>{g.metodo || g.cuenta}</td><td style={{"display":"flex","gap":"5px"}}><button className="btn btn-d btn-sm" onClick={() => handleDelete(g.id)}>🗑️</button></td></tr>

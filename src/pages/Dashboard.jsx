@@ -1,52 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAppData } from '../context/AppDataContext';
-import { GeminaKey } from '../firebase/config';
 import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
 
 export default function Dashboard({ period }) {
   const { setActivePage, ingresos, gastos, ahorros, inversiones, deudas, bancos } = useAppData();
-  const [aiInsights, setAiInsights] = useState([]);
-  const [loadingAi, setLoadingAi] = useState(true);
-
-  useEffect(() => {
-    if (!GeminaKey || (!ingresos.length && !gastos.length)) {
-      setLoadingAi(false);
-      return;
-    }
-    const fetchInsights = async () => {
-      try {
-        const genAI = new GoogleGenerativeAI(GeminaKey);
-        const model = genAI.getGenerativeModel({ 
-          model: "gemini-1.5-flash",
-          generationConfig: {
-            responseMimeType: "application/json",
-            responseSchema: {
-              type: SchemaType.ARRAY,
-              items: {
-                type: SchemaType.OBJECT,
-                properties: {
-                  type: { type: SchemaType.STRING, description: "Solo elige uno: POSITIVO, ALERTA, OPORTUNIDAD, o URGENTE" },
-                  title: { type: SchemaType.STRING, description: "Título muy corto (ej. Ahorro en alza)" },
-                  body: { type: SchemaType.STRING, description: "Explicación breve de 1 o 2 líneas con montos" },
-                  actionPath: { type: SchemaType.STRING, description: "modulo sugerido: ingresos, gastos, inversiones, o deudas" }
-                },
-                required: ["type", "title", "body", "actionPath"]
-              }
-            }
-          }
-        });
-        const prompt = `Analiza estos datos financieros: Ingresos: ${JSON.stringify(ingresos)}, Gastos: ${JSON.stringify(gastos)}, Ahorros: ${JSON.stringify(ahorros)}, Deudas: ${JSON.stringify(deudas)}, Bancos: ${JSON.stringify(bancos)}. Genera exactamente 4 insights financieros (1 positivo, 1 alerta, 1 oportunidad, 1 urgente) basados en patrones de esta data particular. Evalúa salud financiera. Da montos precisos. No inventes.`;
-        const result = await model.generateContent(prompt);
-        const data = JSON.parse(result.response.text());
-        setAiInsights(data);
-      } catch(e) {
-        console.error("AI Insight Error", e);
-      } finally {
-        setLoadingAi(false);
-      }
-    };
-    fetchInsights();
-  }, [ingresos, gastos, ahorros, deudas, bancos]);
 
   const getMonthPrefix = (p) => {
     if(p === 'Enero') return '2025-01';
@@ -322,39 +279,6 @@ export default function Dashboard({ period }) {
         <div style={{"display":"flex","alignItems":"center","gap":"10px","padding":"9px 12px","background":"var(--glass)","borderRadius":"var(--r3)"}}><span style={{"fontSize":"16px"}}>✅</span><div style={{"flex":"1"}}><div style={{"fontSize":"13px","fontWeight":"600","color":"var(--text2)"}}>Agua y Luz</div><div style={{"fontSize":"11px","color":"var(--green)"}}>10 Mar — Completado</div></div><span style={{"fontFamily":"var(--mono)","fontSize":"13px","color":"var(--text2)"}}>$85.000</span></div>
       </div>
     </div>
-  </div>
-
-  {/*  INSIGHTS IA + TRANSACCIONES  */}
-  <div className="card">
-    <div className="card-hdr"><div className="card-title">🤖 Insights de IA Financiera</div><span className="card-action" onClick={() => setActivePage('ia')}>Hablar con la IA →</span></div>
-    
-    {loadingAi ? (
-      <div style={{padding:"20px", textAlign:"center", color:"var(--text2)", fontSize:"14px", animation:"pulse 1.5s infinite opacity"}}>
-        ✨ Gémini está analizando tus finanzas...
-      </div>
-    ) : aiInsights.length > 0 ? (
-      <div style={{display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:"12px"}}>
-        {aiInsights.map((ins, idx) => {
-          let c = "var(--blue)", bg = "rgba(107,127,214,0.2)";
-          if(ins.type === 'POSITIVO') { c = "var(--green)"; bg = "rgba(126,211,33,0.2)"; }
-          if(ins.type === 'ALERTA')   { c = "var(--pink)"; bg = "rgba(232,93,117,0.2)"; }
-          if(ins.type === 'URGENTE')  { c = "var(--orange)"; bg = "rgba(255,154,118,0.2)"; }
-          
-          return (
-            <div key={idx} className="ins-card" style={{borderColor: bg}}>
-              <div className="ins-type" style={{color: c}}>{ins.type === 'POSITIVO'?'📈 ':ins.type==='ALERTA'?'⚠️ ':ins.type==='URGENTE'?'🔥 ':'💡 '}{ins.type}</div>
-              <div style={{fontSize:"13.5px", fontWeight:"700", marginBottom:"4px"}}>{ins.title}</div>
-              <div style={{fontSize:"12px", color:"var(--text2)", lineHeight:"1.5", flex: 1}}>{ins.body}</div>
-              <button className="btn btn-gh btn-sm" style={{marginTop:"10px"}} onClick={() => setActivePage(ins.actionPath)}>Ver módulo →</button>
-            </div>
-          )
-        })}
-      </div>
-    ) : (
-      <div style={{padding:"20px", textAlign:"center", color:"var(--text2)", fontSize:"14px"}}>
-        No hay suficientes datos para generar insights inteligentes.
-      </div>
-    )}
   </div>
 
   {/*  TRANSACCIONES RECIENTES  */}

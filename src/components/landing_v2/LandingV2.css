@@ -1,0 +1,225 @@
+/* LandingV2.css */
+
+/* --- Estilos Globales y Fondo --- */
+.landing-v2-container {
+  background-color: #0A0D14; /* Negro profundo */
+  color: #F0F4FF; /* Texto principal blanco */
+  font-family: 'DM Sans', sans-serif;
+  height: 200vh; /* Altura extendida para habilitar el scrollytelling */
+  position: relative;
+}
+
+.scroll-content-container {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* --- Cabecera y Navegación --- */
+.landing-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding: 24px 48px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 100;
+  transition: opacity 0.5s ease-in-out;
+}
+
+.logo-text {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+}
+
+.main-nav a {
+  color: #F0F4FF;
+  text-decoration: none;
+  margin-left: 32px;
+  font-weight: 500;
+  position: relative;
+  transition: color 0.3s ease;
+}
+
+.main-nav a:hover {
+  color: #FF9A76; /* Naranja para el hover */
+}
+
+.main-nav a::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -5px;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, #FF9A76, #FFB84D);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.main-nav a:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+/* --- Contenido del Hero --- */
+.hero-text-content {
+  text-align: center;
+  max-width: 800px;
+  position: relative;
+  z-index: 10;
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+}
+
+.hero-title {
+  font-size: 4rem; /* 64px */
+  font-weight: 800;
+  letter-spacing: -1.5px;
+  line-height: 1.1;
+  margin-bottom: 24px;
+}
+
+.hero-title .gradient-text {
+  background: linear-gradient(90deg, #FF9A76, #FFB84D);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-body {
+  font-size: 1.125rem; /* 18px */
+  color: #8B9CC8; /* Texto secundario azulado */
+  line-height: 1.6;
+  max-width: 600px;
+  margin: 0 auto 32px;
+}
+
+/* --- Botón CTA --- */
+.cta-button {
+  background: linear-gradient(135deg, #FF9A76, #FFB84D);
+  color: #1a1000;
+  border: none;
+  border-radius: 999px; /* Premium rounded */
+  padding: 16px 36px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 24px rgba(255, 154, 118, 0.3);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+  overflow: hidden;
+}
+
+.cta-button:hover {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 12px 32px rgba(255, 154, 118, 0.45);
+}
+
+.cta-button .arrow {
+  font-size: 1.2rem;
+  transition: transform 0.3s ease;
+}
+
+.cta-button:hover .arrow {
+  transform: translateY(3px);
+}
+
+/* --- Dashboard 3D Placeholder --- */
+.cashflow-dashboard-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 500px;
+  height: 300px;
+  background: rgba(24, 30, 46, 0.5); /* Surface2 con transparencia */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(107, 127, 214, 0.2);
+  border-radius: 16px;
+  padding: 24px;
+  z-index: 20;
+  transform-style: preserve-3d;
+  box-shadow: 0 40px 80px rgba(0,0,0,0.5);
+}
+
+.cashflow-dashboard-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #8B9CC8;
+  margin-bottom: 20px;
+}
+
+.bar-chart {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-end;
+  height: 150px;
+  border-bottom: 1px solid rgba(107, 127, 214, 0.2);
+}
+
+.bar {
+  width: 15%;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+}
+
+.bar-fill {
+  width: 100%;
+  background: linear-gradient(180deg, rgba(107, 127, 214, 0.8), rgba(107, 127, 214, 0.3));
+  border-radius: 4px 4px 0 0;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 12px rgba(107, 127, 214, 0.5);
+}
+
+.bar:hover .bar-fill {
+  background: linear-gradient(180deg, #6B7FD6, #8B9CC8);
+  box-shadow: 0 0 24px #6B7FD6;
+  transform: scaleY(1.05);
+}
+
+.line-chart-legend {
+  font-size: 0.75rem;
+  color: #8B9CC8;
+  text-align: center;
+  margin-top: 16px;
+  background: linear-gradient(90deg, #C9A84C, #22D3EE);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 600;
+}
+
+.tooltip-3d {
+  position: absolute;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #111520;
+  border: 1px solid #FF9A76;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 0.75rem;
+  color: #F0F4FF;
+  white-space: nowrap;
+  box-shadow: 0 4px 16px rgba(255, 154, 118, 0.3);
+  z-index: 100;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px) translateX(-50%); }
+  to { opacity: 1; transform: translateY(0) translateX(-50%); }
+}

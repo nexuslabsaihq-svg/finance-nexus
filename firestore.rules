@@ -1,0 +1,26 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Deniega todas las lecturas y escrituras por defecto.
+    // Nadie puede acceder a la base de datos a menos que una regla más específica lo permita.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // PERMITE LA LECTURA PÚBLICA SOLO PARA LA COLECCIÓN 'public_content'.
+    // Útil para contenido que debe ser visible para todos, como posts de un blog o configuraciones generales.
+    // match /public_content/{docId} {
+    //   allow read: if true;
+    //   allow write: if false; // Nadie puede escribir desde el cliente.
+    // }
+
+    // REGLAS PARA COLECCIONES DE USUARIOS (EJEMPLO)
+    // Solo el usuario autenticado y dueño del documento puede leer y escribir sus propios datos.
+    // match /users/{userId}/{document=**} {
+    //   allow read, write: if request.auth != null && request.auth.uid == userId;
+    // }
+
+  }
+}
