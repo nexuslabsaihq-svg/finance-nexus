@@ -60,8 +60,8 @@ export default function Dashboard({ period }) {
           <path d="M10,70 A60,60 0 0,1 130,70" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="12" strokeLinecap="round"/>
           <path d="M10,70 A60,60 0 0,1 130,70" fill="none" stroke="url(#scoreGrad)" strokeWidth="12" strokeLinecap="round" strokeDasharray="188" strokeDashoffset="47"/>
           <defs><linearGradient id="scoreGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stopColor="#E85D75"/><stop offset="40%" stopColor="#FF9A76"/><stop offset="70%" stopColor="#7ED321"/><stop offset="100%" stopColor="#22D3EE"/></linearGradient></defs>
-          <text x="70" y="68" text-anchor="middle" font-size="22" font-weight="700" fill="var(--text)" font-family="'IBM Plex Mono',monospace">778</text>
-          <text x="70" y="78" text-anchor="middle" font-size="8" fill="var(--text2)" font-family="sans-serif">de 1000 puntos</text>
+          <text x="70" y="68" textAnchor="middle" fontSize="22" fontWeight="700" fill="var(--text)" fontFamily="'IBM Plex Mono',monospace">778</text>
+          <text x="70" y="78" textAnchor="middle" fontSize="8" fill="var(--text2)" fontFamily="sans-serif">de 1000 puntos</text>
         </svg>
         <div style={{"fontSize":"15px","fontWeight":"700","color":"var(--green)","marginTop":"6px"}}>Muy Bueno ✓</div>
         <div style={{"fontSize":"11px","color":"var(--text2)","marginTop":"3px"}}>Mejor que el 82% de usuarios</div>
@@ -134,12 +134,12 @@ export default function Dashboard({ period }) {
           <circle cx="448" cy="35" r="4" fill="#FF9A76"/>
           <circle cx="560" cy="8" r="5" fill="#FF9A76" stroke="var(--surface)" strokeWidth="2"/>
           {/*  Labels  */}
-          <text x="0" y="147" font-size="9.5" fill="rgba(139,156,200,0.7)" font-family="sans-serif">Oct</text>
-          <text x="105" y="147" font-size="9.5" fill="rgba(139,156,200,0.7)" font-family="sans-serif">Nov</text>
-          <text x="215" y="147" font-size="9.5" fill="rgba(139,156,200,0.7)" font-family="sans-serif">Dic</text>
-          <text x="326" y="147" font-size="9.5" fill="rgba(139,156,200,0.7)" font-family="sans-serif">Ene</text>
-          <text x="434" y="147" font-size="9.5" fill="rgba(139,156,200,0.7)" font-family="sans-serif">Feb</text>
-          <text x="540" y="147" font-size="9.5" fill="rgba(139,156,200,0.7)" font-family="sans-serif">Mar</text>
+          <text x="0" y="147" fontSize="9.5" fill="rgba(139,156,200,0.7)" fontFamily="sans-serif">Oct</text>
+          <text x="105" y="147" fontSize="9.5" fill="rgba(139,156,200,0.7)" fontFamily="sans-serif">Nov</text>
+          <text x="215" y="147" fontSize="9.5" fill="rgba(139,156,200,0.7)" fontFamily="sans-serif">Dic</text>
+          <text x="326" y="147" fontSize="9.5" fill="rgba(139,156,200,0.7)" fontFamily="sans-serif">Ene</text>
+          <text x="434" y="147" fontSize="9.5" fill="rgba(139,156,200,0.7)" fontFamily="sans-serif">Feb</text>
+          <text x="540" y="147" fontSize="9.5" fill="rgba(139,156,200,0.7)" fontFamily="sans-serif">Mar</text>
         </svg>
         <div style={{"display":"flex","gap":"20px","marginTop":"8px","fontSize":"12px"}}>
           <div style={{"display":"flex","alignItems":"center","gap":"5px"}}><span style={{"width":"18px","height":"2.5px","background":"var(--orange)","display":"inline-block","borderRadius":"3px"}}></span><span style={{"color":"var(--text2)"}}>Ingresos</span></div>
@@ -152,11 +152,11 @@ export default function Dashboard({ period }) {
       <div className="card">
         <div className="card-hdr"><div className="card-title">🎯 Parámetros de Gasto</div><div className="card-sub">% del presupuesto utilizado</div></div>
         <div style={{"display":"flex","justifyContent":"space-around","flexWrap":"wrap","gap":"10px"}}>
-          <div className="ring-item"><svg viewBox="0 0 60 60" width="64" height="64"><circle cx="30" cy="30" r="24" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="8"/><circle cx="30" cy="30" r="24" fill="none" stroke="#FF9A76" strokeWidth="8" strokeDasharray="86 151" strokeDashoffset="-37.7" transform="rotate(-90 30 30)" strokeLinecap="round"/><text x="30" y="34" text-anchor="middle" font-size="11" font-weight="700" fill="#FF9A76" font-family="'IBM Plex Mono',monospace">57%</text></svg><div className="ring-label">Alimentación</div></div>
-          <div className="ring-item"><svg viewBox="0 0 60 60" width="64" height="64"><circle cx="30" cy="30" r="24" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="8"/><circle cx="30" cy="30" r="24" fill="none" stroke="#7ED321" strokeWidth="8" strokeDasharray="114 151" strokeDashoffset="-37.7" transform="rotate(-90 30 30)" strokeLinecap="round"/><text x="30" y="34" text-anchor="middle" font-size="11" font-weight="700" fill="#7ED321" font-family="'IBM Plex Mono',monospace">76%</text></svg><div className="ring-label">Vivienda</div></div>
-          <div className="ring-item"><svg viewBox="0 0 60 60" width="64" height="64"><circle cx="30" cy="30" r="24" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="8"/><circle cx="30" cy="30" r="24" fill="none" stroke="#6B7FD6" strokeWidth="8" strokeDasharray="32 151" strokeDashoffset="-37.7" transform="rotate(-90 30 30)" strokeLinecap="round"/><text x="30" y="34" text-anchor="middle" font-size="11" font-weight="700" fill="#6B7FD6" font-family="'IBM Plex Mono',monospace">21%</text></svg><div className="ring-label">Transporte</div></div>
-          <div className="ring-item"><svg viewBox="0 0 60 60" width="64" height="64"><circle cx="30" cy="30" r="24" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="8"/><circle cx="30" cy="30" r="24" fill="none" stroke="#A855F7" strokeWidth="8" strokeDasharray="51 151" strokeDashoffset="-37.7" transform="rotate(-90 30 30)" strokeLinecap="round"/><text x="30" y="34" text-anchor="middle" font-size="11" font-weight="700" fill="#A855F7" font-family="'IBM Plex Mono',monospace">34%</text></svg><div className="ring-label">Ocio</div></div>
-          <div className="ring-item"><svg viewBox="0 0 60 60" width="64" height="64"><circle cx="30" cy="30" r="24" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="8"/><circle cx="30" cy="30" r="24" fill="none" stroke="#22D3EE" strokeWidth="8" strokeDasharray="15 151" strokeDashoffset="-37.7" transform="rotate(-90 30 30)" strokeLinecap="round"/><text x="30" y="34" text-anchor="middle" font-size="11" font-weight="700" fill="#22D3EE" font-family="'IBM Plex Mono',monospace">10%</text></svg><div className="ring-label">Vacaciones</div></div>
+          <div className="ring-item"><svg viewBox="0 0 60 60" width="64" height="64"><circle cx="30" cy="30" r="24" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="8"/><circle cx="30" cy="30" r="24" fill="none" stroke="#FF9A76" strokeWidth="8" strokeDasharray="86 151" strokeDashoffset="-37.7" transform="rotate(-90 30 30)" strokeLinecap="round"/><text x="30" y="34" textAnchor="middle" fontSize="11" fontWeight="700" fill="#FF9A76" fontFamily="'IBM Plex Mono',monospace">57%</text></svg><div className="ring-label">Alimentación</div></div>
+          <div className="ring-item"><svg viewBox="0 0 60 60" width="64" height="64"><circle cx="30" cy="30" r="24" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="8"/><circle cx="30" cy="30" r="24" fill="none" stroke="#7ED321" strokeWidth="8" strokeDasharray="114 151" strokeDashoffset="-37.7" transform="rotate(-90 30 30)" strokeLinecap="round"/><text x="30" y="34" textAnchor="middle" fontSize="11" fontWeight="700" fill="#7ED321" fontFamily="'IBM Plex Mono',monospace">76%</text></svg><div className="ring-label">Vivienda</div></div>
+          <div className="ring-item"><svg viewBox="0 0 60 60" width="64" height="64"><circle cx="30" cy="30" r="24" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="8"/><circle cx="30" cy="30" r="24" fill="none" stroke="#6B7FD6" strokeWidth="8" strokeDasharray="32 151" strokeDashoffset="-37.7" transform="rotate(-90 30 30)" strokeLinecap="round"/><text x="30" y="34" textAnchor="middle" fontSize="11" fontWeight="700" fill="#6B7FD6" fontFamily="'IBM Plex Mono',monospace">21%</text></svg><div className="ring-label">Transporte</div></div>
+          <div className="ring-item"><svg viewBox="0 0 60 60" width="64" height="64"><circle cx="30" cy="30" r="24" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="8"/><circle cx="30" cy="30" r="24" fill="none" stroke="#A855F7" strokeWidth="8" strokeDasharray="51 151" strokeDashoffset="-37.7" transform="rotate(-90 30 30)" strokeLinecap="round"/><text x="30" y="34" textAnchor="middle" fontSize="11" fontWeight="700" fill="#A855F7" fontFamily="'IBM Plex Mono',monospace">34%</text></svg><div className="ring-label">Ocio</div></div>
+          <div className="ring-item"><svg viewBox="0 0 60 60" width="64" height="64"><circle cx="30" cy="30" r="24" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="8"/><circle cx="30" cy="30" r="24" fill="none" stroke="#22D3EE" strokeWidth="8" strokeDasharray="15 151" strokeDashoffset="-37.7" transform="rotate(-90 30 30)" strokeLinecap="round"/><text x="30" y="34" textAnchor="middle" fontSize="11" fontWeight="700" fill="#22D3EE" fontFamily="'IBM Plex Mono',monospace">10%</text></svg><div className="ring-label">Vacaciones</div></div>
         </div>
       </div>
     </div>
@@ -196,8 +196,8 @@ export default function Dashboard({ period }) {
             <circle cx="50" cy="50" r="35" fill="none" stroke="#E85D75" strokeWidth="16" strokeDasharray="40 180" strokeDashoffset="-88" transform="rotate(-90 50 50)"/>
             <circle cx="50" cy="50" r="35" fill="none" stroke="#7ED321" strokeWidth="16" strokeDasharray="28 192" strokeDashoffset="-128" transform="rotate(-90 50 50)"/>
             <circle cx="50" cy="50" r="35" fill="none" stroke="#6B7FD6" strokeWidth="16" strokeDasharray="22 198" strokeDashoffset="-156" transform="rotate(-90 50 50)"/>
-            <text x="50" y="47" text-anchor="middle" font-size="9" font-weight="700" fill="white" font-family="'IBM Plex Mono',monospace">$2.1M</text>
-            <text x="50" y="57" text-anchor="middle" font-size="6" fill="rgba(139,156,200,0.8)" font-family="sans-serif">total gastos</text>
+            <text x="50" y="47" textAnchor="middle" fontSize="9" fontWeight="700" fill="white" fontFamily="'IBM Plex Mono',monospace">$2.1M</text>
+            <text x="50" y="57" textAnchor="middle" fontSize="6" fill="rgba(139,156,200,0.8)" fontFamily="sans-serif">total gastos</text>
           </svg>
           <div style={{"flex":"1","display":"flex","flexDirection":"column","gap":"7px"}}>
             <div style={{"display":"flex","justifyContent":"space-between","fontSize":"12px"}}><div style={{"display":"flex","alignItems":"center","gap":"5px","color":"var(--text2)"}}><span style={{"width":"8px","height":"8px","background":"#FF9A76","borderRadius":"2px","display":"inline-block"}}></span>Aliment.</div><span style={{"fontFamily":"var(--mono)"}}>$450K</span></div>
