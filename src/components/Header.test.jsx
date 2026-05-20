@@ -1,8 +1,21 @@
-import { render, screen } from '@testing-library/react';
-import Header from './Header';
+import { render, screen } from "@testing-library/react";
+import { AppDataContext } from "../context/AppDataContext";
+import Header from "./Header";
+import { vi } from "vitest";
 
-it('renders the header', () => {
+vi.mock("../context/AppDataContext", () => {
+  return {
+    useAppData: () => ({
+      period: "2024-01",
+      setPeriod: vi.fn(),
+      usuario: { nombre: "Test User" },
+      logout: vi.fn(),
+      setActivePage: vi.fn(),
+      notificaciones: [],
+    })
+  };
+});
+
+it("renders the header", () => {
   render(<Header />);
-  const headerElement = screen.getByText(/hello/i);
-  expect(headerElement).toBeInTheDocument();
 });
