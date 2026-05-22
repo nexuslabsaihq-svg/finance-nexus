@@ -143,7 +143,14 @@ export default function IA() {
                    borderBottomLeftRadius: msg.role !== 'user' ? '4px' : '16px'
                  }}>
                    {msg.attachment && <div style={{background:"rgba(107,127,214,0.1)", color:"var(--blue)", border:"1px solid rgba(107,127,214,0.3)", padding:"6px 10px", borderRadius:"6px", fontSize:"12px", marginBottom:"8px", display:"inline-flex", gap:"6px", alignItems:"center"}}>📎 {msg.attachment}</div>}
-                   <div style={{whiteSpace: 'pre-wrap'}} dangerouslySetInnerHTML={{__html: msg.content.replace(/\*([^*]+)\*/g, '<b>$1</b>')}} />
+                   <div style={{whiteSpace: 'pre-wrap'}}>
+                     {msg.content.split(/(\*[^*]+\*)/g).map((part, i) => {
+                       if (part.startsWith('*') && part.endsWith('*') && part.length > 2) {
+                         return <b key={i}>{part.slice(1, -1)}</b>;
+                       }
+                       return part;
+                     })}
+                   </div>
                  </div>
                  <div style={{fontSize:"10px", color:"var(--text3)", marginTop:"5px"}}>{msg.time}</div>
               </div>
