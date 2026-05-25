@@ -48,6 +48,17 @@ export default function IA() {
     }
   };
 
+  const formatMessage = (content) => {
+    if (!content) return '';
+    const parts = content.split(/\*([^*]+)\*/g);
+    return parts.map((part, index) => {
+      if (index % 2 === 1) {
+        return <b key={index}>{part}</b>;
+      }
+      return part;
+    });
+  };
+
   const exportPDF = () => {
     const doc = new jsPDF();
     doc.setFont("helvetica", "bold");
@@ -143,7 +154,7 @@ export default function IA() {
                    borderBottomLeftRadius: msg.role !== 'user' ? '4px' : '16px'
                  }}>
                    {msg.attachment && <div style={{background:"rgba(107,127,214,0.1)", color:"var(--blue)", border:"1px solid rgba(107,127,214,0.3)", padding:"6px 10px", borderRadius:"6px", fontSize:"12px", marginBottom:"8px", display:"inline-flex", gap:"6px", alignItems:"center"}}>📎 {msg.attachment}</div>}
-                   <div style={{whiteSpace: 'pre-wrap'}} dangerouslySetInnerHTML={{__html: msg.content.replace(/\*([^*]+)\*/g, '<b>$1</b>')}} />
+                   <div style={{whiteSpace: 'pre-wrap'}}>{formatMessage(msg.content)}</div>
                  </div>
                  <div style={{fontSize:"10px", color:"var(--text3)", marginTop:"5px"}}>{msg.time}</div>
               </div>
