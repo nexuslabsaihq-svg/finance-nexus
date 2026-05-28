@@ -1,0 +1,4 @@
+## 2024-05-28 - [XSS Fix Pattern for Dynamic Text Formatting]
+**Vulnerability:** XSS risk via `dangerouslySetInnerHTML` used for dynamically formatting chat messages in React components (`src/pages/IA.jsx`).
+**Learning:** Using `dangerouslySetInnerHTML` for simple text formatting (like converting `*text*` to `<b>text</b>`) introduces unnecessary XSS risks, especially when rendering user or API-generated content.
+**Prevention:** Avoid `dangerouslySetInnerHTML` for user or dynamically generated text formatting. Prefer React-based string splitting and mapping (e.g., `text.split(/\*([^*]+)\*/g).map(...)`) to safely render elements without requiring external sanitization dependencies like DOMPurify. Return unformatted text parts directly as strings rather than wrapping them in `<React.Fragment>` to avoid `ReferenceError`s if React is not explicitly imported.
