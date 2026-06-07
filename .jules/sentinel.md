@@ -1,0 +1,4 @@
+## 2024-05-18 - [XSS via dynamically set HTML for text formatting]
+**Vulnerability:** Found `dangerouslySetInnerHTML` being used to dynamically replace asterisks with HTML `<b>` tags in AI chat messages in `src/pages/IA.jsx`.
+**Learning:** Even internal string replacement routines (like regex `replace` for Markdown syntax) become an XSS vector when injected into `dangerouslySetInnerHTML`. The text passed to it might be partially controlled by user input or external APIs (e.g., Google Generative AI responses in `src/pages/IA.jsx`).
+**Prevention:** Avoid `dangerouslySetInnerHTML` for simple text formatting tasks. Instead, use React's built-in string splitting (`String.prototype.split`) with regex to split the text into an array of strings and render HTML tags safely via array mapping in JSX.
