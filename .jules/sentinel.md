@@ -1,0 +1,4 @@
+## 2025-06-12 - [XSS Prevention]
+**Vulnerability:** A cross-site scripting (XSS) vulnerability was found in `src/pages/IA.jsx` due to the use of `dangerouslySetInnerHTML` for rendering user and AI messages.
+**Learning:** `dangerouslySetInnerHTML` was used as a shortcut to support basic text formatting (bolding with asterisks `*bold*`). Using it directly on dynamic or user-generated text opens the app to XSS attacks, as it bypassed React's built-in escaping mechanisms.
+**Prevention:** Rather than using `dangerouslySetInnerHTML` or introducing a heavy third-party sanitization library like DOMPurify for simple formatting, use React's string splitting mechanism. Split the content with regex (e.g. `msg.content?.split(/(\*[^*]+\*)/g)`) and map over the array to render formatting safely. Use the index modulo (e.g., `i % 2 === 1`) to accurately apply formatting without wrapping standard text components.
