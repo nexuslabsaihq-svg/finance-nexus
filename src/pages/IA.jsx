@@ -4,8 +4,9 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { jsPDF } from 'jspdf';
 
 export default function IA() {
-  const { chatsIA, setChatsIA, ingresos, gastos, ahorros, deudas, bancos, inversiones, authUser } = useAppData();
+  const { chatsIA, setChatsIA, authUser } = useAppData();
   const [input, setInput] = useState('');
+  // eslint-disable-next-line no-unused-vars
   const [loading, setLoading] = useState(false);
   const [file, setFile] = useState(null);
   const [rateLimitExceeded, setRateLimitExceeded] = useState(false);
@@ -15,6 +16,7 @@ export default function IA() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatsIA, loading]);
 
+  // eslint-disable-next-line no-unused-vars
   const checkRateLimit = () => {
     try {
       const now = Date.now();
@@ -32,6 +34,7 @@ export default function IA() {
     } catch { return true; }
   };
 
+  // eslint-disable-next-line no-unused-vars
   const fileToGenerativePart = async (fileBlob) => {
     return new Promise((resolve) => {
       const reader = new FileReader();
@@ -69,6 +72,7 @@ export default function IA() {
     doc.save(`Nexus_Log_${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
+  // eslint-disable-next-line no-unused-vars
   const sendPrompt = async (textOverride = null) => {
     // Empty function
   };
@@ -143,7 +147,11 @@ export default function IA() {
                    borderBottomLeftRadius: msg.role !== 'user' ? '4px' : '16px'
                  }}>
                    {msg.attachment && <div style={{background:"rgba(107,127,214,0.1)", color:"var(--blue)", border:"1px solid rgba(107,127,214,0.3)", padding:"6px 10px", borderRadius:"6px", fontSize:"12px", marginBottom:"8px", display:"inline-flex", gap:"6px", alignItems:"center"}}>📎 {msg.attachment}</div>}
-                   <div style={{whiteSpace: 'pre-wrap'}} dangerouslySetInnerHTML={{__html: msg.content.replace(/\*([^*]+)\*/g, '<b>$1</b>')}} />
+                   <div style={{whiteSpace: 'pre-wrap'}}>
+                     {msg.content?.split(/\*([^*]+)\*/g).map((part, i) => (
+                       i % 2 === 1 ? <b key={i}>{part}</b> : part
+                     ))}
+                   </div>
                  </div>
                  <div style={{fontSize:"10px", color:"var(--text3)", marginTop:"5px"}}>{msg.time}</div>
               </div>
