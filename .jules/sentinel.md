@@ -1,0 +1,4 @@
+## 2024-06-16 - Prevent XSS in AI Chat Rendering
+**Vulnerability:** The AI chat page (`src/pages/IA.jsx`) used `dangerouslySetInnerHTML` to render dynamically formatted text from the AI assistant (using regex replace to create bold tags). This could allow Cross-Site Scripting (XSS) if the AI returned malicious HTML or if a user input was reflected back without sanitization.
+**Learning:** React provides safe alternatives to rendering HTML strings. It's safer to split strings and render React components directly.
+**Prevention:** Avoid `dangerouslySetInnerHTML` for dynamically formatted text. Instead, use string splitting (e.g., `msg.content?.split(/\*([^*]+)\*/g)`) and map the resulting array, using modulo indexing (`i % 2 === 1`) to accurately identify and wrap matched segments in React elements like `<b>` tags.
