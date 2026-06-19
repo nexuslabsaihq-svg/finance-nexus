@@ -1,0 +1,4 @@
+## 2024-06-19 - Safe Text Formatting without dangerouslySetInnerHTML
+**Vulnerability:** XSS vulnerability by using `dangerouslySetInnerHTML` to render basic formatting (`*text*` to `<b>text</b>`) in React, which allowed potential script execution from dynamically provided content (e.g., IA responses).
+**Learning:** This is a codebase-specific vulnerability pattern where `dangerouslySetInnerHTML` was used out of convenience for simple text formatting instead of a safe array mapping approach. React is capable of handling formatting inline without exposing the DOM to XSS risks.
+**Prevention:** Always avoid `dangerouslySetInnerHTML` for basic user or dynamic text formatting. Prefer a safe React rendering approach using string splitting via RegExp (e.g. `msg.content?.split(/\*([^*]+)\*/g)`) and mapping over the resulting array, injecting specific JSX tags (`<b>`) around the desired text matches.
