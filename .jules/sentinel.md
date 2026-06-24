@@ -1,0 +1,4 @@
+## 2024-06-24 - Remove `dangerouslySetInnerHTML`
+**Vulnerability:** The application was vulnerable to Cross-Site Scripting (XSS) through the `dangerouslySetInnerHTML` property in the `src/pages/IA.jsx` file, which parsed potentially unsanitized text responses.
+**Learning:** React components should not directly render dynamic HTML strings without explicit sanitization libraries, but an even safer pattern is to avoid DOM insertion entirely by utilizing React's JSX array mapping and regular expressions to safely render stylized content.
+**Prevention:** Avoid `dangerouslySetInnerHTML` for user or dynamically generated text formatting. Prefer React-based string splitting and mapping to render elements safely without requiring external sanitization dependencies like DOMPurify.
