@@ -1,0 +1,4 @@
+## 2025-02-27 - [XSS via dangerouslySetInnerHTML in AI Chat]
+**Vulnerability:** A Cross-Site Scripting (XSS) vulnerability was found in `src/pages/IA.jsx` where the application rendered formatting from AI responses. It directly evaluated arbitrary AI messages as raw HTML using `dangerouslySetInnerHTML`. If the AI output contained `<script>` tags or malicious attributes, they would execute in the user's browser context.
+**Learning:** React provides native escape sequences for HTML text, which are safely neutralized. Using string splitting with RegEx capture groups combined with a mapping function can securely render styling (like bold text `<b>`) without opening the door for XSS that `dangerouslySetInnerHTML` does.
+**Prevention:** Avoid `dangerouslySetInnerHTML` for any user or third-party generated text formatting. Prefer a React-based splitting approach or securely sanitize via `DOMPurify` if `dangerouslySetInnerHTML` is unavoidable.
