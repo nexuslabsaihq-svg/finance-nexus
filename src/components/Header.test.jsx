@@ -1,8 +1,20 @@
 import { render, screen } from '@testing-library/react';
+import '@testing-library/jest-dom';
+import { it, expect, vi } from 'vitest';
 import Header from './Header';
+import * as AppDataContextModule from '../context/AppDataContext';
+
+vi.spyOn(AppDataContextModule, 'useAppData').mockReturnValue({
+  period: '2024-06',
+  setPeriod: vi.fn(),
+  usuario: { nombre: 'Usuario' },
+  authUser: { displayName: 'Usuario' },
+  logout: vi.fn(),
+  setActivePage: vi.fn(),
+  notificaciones: []
+});
 
 it('renders the header', () => {
   render(<Header />);
-  const headerElement = screen.getByText(/hello/i);
-  expect(headerElement).toBeInTheDocument();
+  expect(screen.getAllByText('Usuario').length).toBeGreaterThan(0);
 });

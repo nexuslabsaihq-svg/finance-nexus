@@ -1,0 +1,4 @@
+## 2024-06-27 - Cross-Site Scripting (XSS) in AI Chat Component
+**Vulnerability:** The `src/pages/IA.jsx` file used `dangerouslySetInnerHTML` to render markdown-style bold text (e.g. `*text*`) in chat messages (`msg.content`). This exposed the application to Stored or Reflected XSS if user input or AI-generated responses contained malicious HTML/JavaScript tags.
+**Learning:** Developers sometimes use `dangerouslySetInnerHTML` for simple text formatting substitutions without realizing that replacing one regex pattern doesn't sanitize the rest of the string.
+**Prevention:** Avoid `dangerouslySetInnerHTML` for user or dynamically generated text formatting. Prefer React-based string splitting (`split`) and mapping to render elements safely, and always fallback/optionally chain string variables to prevent crashes if `content` is undefined.
