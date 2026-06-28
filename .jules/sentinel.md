@@ -1,0 +1,4 @@
+## 2025-03-08 - [IA Chat XSS Mitigation]
+**Vulnerability:** Found `dangerouslySetInnerHTML` in `src/pages/IA.jsx` for parsing basic bold markup from the AI assistant response. This allowed any unescaped `<script>` or other malicious payloads in the chat content to execute in the user's browser, leading to XSS vulnerabilities.
+**Learning:** Using React's rendering capabilities (array mapping and element wrapping) inherently mitigates injection flaws without relying on potentially bypassable string regex replaces + `dangerouslySetInnerHTML`, and without adding heavyweight external sanitization libraries.
+**Prevention:** Avoid `dangerouslySetInnerHTML` when possible. Parse expected simple patterns natively via regex `split` with capture groups, then map into valid React fragments or components.
