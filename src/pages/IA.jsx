@@ -4,9 +4,9 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { jsPDF } from 'jspdf';
 
 export default function IA() {
-  const { chatsIA, setChatsIA, ingresos, gastos, ahorros, deudas, bancos, inversiones, authUser } = useAppData();
+  const { chatsIA, setChatsIA, authUser } = useAppData();
   const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
   const [file, setFile] = useState(null);
   const [rateLimitExceeded, setRateLimitExceeded] = useState(false);
   const chatEndRef = useRef(null);
@@ -15,7 +15,7 @@ export default function IA() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatsIA, loading]);
 
-  const checkRateLimit = () => {
+  const _checkRateLimit = () => {
     try {
       const now = Date.now();
       const oneHourAgo = now - 3600000;
@@ -32,7 +32,7 @@ export default function IA() {
     } catch { return true; }
   };
 
-  const fileToGenerativePart = async (fileBlob) => {
+  const _fileToGenerativePart = async (fileBlob) => {
     return new Promise((resolve) => {
       const reader = new FileReader();
       reader.onloadend = () => resolve({
@@ -69,7 +69,7 @@ export default function IA() {
     doc.save(`Nexus_Log_${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
-  const sendPrompt = async (textOverride = null) => {
+  const sendPrompt = async () => {
     // Empty function
   };
 
@@ -143,7 +143,14 @@ export default function IA() {
                    borderBottomLeftRadius: msg.role !== 'user' ? '4px' : '16px'
                  }}>
                    {msg.attachment && <div style={{background:"rgba(107,127,214,0.1)", color:"var(--blue)", border:"1px solid rgba(107,127,214,0.3)", padding:"6px 10px", borderRadius:"6px", fontSize:"12px", marginBottom:"8px", display:"inline-flex", gap:"6px", alignItems:"center"}}>📎 {msg.attachment}</div>}
-                   <div style={{whiteSpace: 'pre-wrap'}} dangerouslySetInnerHTML={{__html: msg.content.replace(/\*([^*]+)\*/g, '<b>$1</b>')}} />
+                   <div style={{whiteSpace: 'pre-wrap'}}>
+                     {msg.content?.split(/(\*[^*]+\*)/g).map((part, i) => {
+                       if (i % 2 === 1) {
+                         return <b key={i}>{part.slice(1, -1)}</b>;
+                       }
+                       return part;
+                     })}
+                   </div>
                  </div>
                  <div style={{fontSize:"10px", color:"var(--text3)", marginTop:"5px"}}>{msg.time}</div>
               </div>
