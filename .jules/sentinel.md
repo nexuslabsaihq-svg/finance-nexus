@@ -1,0 +1,4 @@
+## 2023-10-27 - [XSS via dynamically formatted text]
+**Vulnerability:** A cross-site scripting (XSS) vulnerability was present in `src/pages/IA.jsx` due to the use of `dangerouslySetInnerHTML` for rendering bold markdown syntax (`*text*`) from untrusted user input within chat messages.
+**Learning:** Using regex and string replacement directly within `dangerouslySetInnerHTML` opens the application to script injection if the content is not sanitized beforehand. React array mapping is a robust alternative for dynamic formatting.
+**Prevention:** Avoid `dangerouslySetInnerHTML`. Instead, use `String.prototype.split()` with a capture group regex to extract formatted strings, and then map over the array directly in JSX, applying standard React tags like `<b>` based on the array index (e.g., `i % 2 === 1`).
