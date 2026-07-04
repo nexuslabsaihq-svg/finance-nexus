@@ -1,0 +1,4 @@
+## 2025-02-24 - React dangerouslySetInnerHTML XSS Vulnerability
+**Vulnerability:** A Cross-Site Scripting (XSS) vulnerability was found in `src/pages/IA.jsx` where text was rendered using `dangerouslySetInnerHTML` coupled with a weak regex replace for formatting.
+**Learning:** Using `dangerouslySetInnerHTML` for simple text formatting like bolding allows arbitrary and malicious HTML tags to be interpreted by the browser, entirely bypassing React's built-in XSS protection.
+**Prevention:** Avoid `dangerouslySetInnerHTML` for user or dynamically generated text. Instead, use React-based string splitting (e.g., `content?.split(/\*([^*]+)\*/g)`) and map over the array (using index modulo to wrap matches) to render elements securely.
