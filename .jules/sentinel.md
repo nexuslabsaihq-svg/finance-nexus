@@ -1,0 +1,4 @@
+## 2024-10-24 - Cross-Site Scripting (XSS) via dangerouslySetInnerHTML in IA.jsx
+**Vulnerability:** The application used dangerouslySetInnerHTML in src/pages/IA.jsx to render markdown-like bold text from AI responses, exposing the app to Cross-Site Scripting (XSS) if malicious HTML is injected.
+**Learning:** Using regex to format strings and then rendering them via dangerouslySetInnerHTML without proper sanitization introduces significant security risks.
+**Prevention:** Always use safe React string splitting and array mapping to render formatted text instead of dangerouslySetInnerHTML, or use an established sanitization library if HTML rendering is absolutely necessary.
