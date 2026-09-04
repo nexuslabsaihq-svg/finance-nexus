@@ -42,7 +42,12 @@ export default function Header() {
 
   return (
     <header className="header" style={{position: 'relative', width: '100%', flexShrink: 0}}>
-      <div className="greeting">Hola, <span>{authUser?.displayName?.split(' ')[0] || 'Usuario'}</span> 👋</div>
+      <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
+        <button className="hamburger" onClick={() => document.body.classList.toggle('sidebar-open')} title="Menú">
+          ☰
+        </button>
+        <div className="greeting">Hola, <span>{authUser?.displayName?.split(' ')[0] || 'Usuario'}</span> 👋</div>
+      </div>
       
       <div className="search-wrap" style={{ position: 'relative' }}>
         <span style={{position:'absolute', left: '12px', top:'50%', transform:'translateY(-50%)'}}>🔍</span>
@@ -78,6 +83,13 @@ export default function Header() {
             ))}
           </select>
         </div>
+        
+        <button className="hbtn" onClick={() => {
+          const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+          document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
+        }} title="Cambiar tema">
+          🌓
+        </button>
         
         <button className="hbtn" style={{ fontSize: 11, fontWeight: 700, fontFamily: 'var(--font)' }}>CLP</button>
         

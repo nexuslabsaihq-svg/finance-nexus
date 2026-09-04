@@ -7,7 +7,10 @@ const NavItem = ({ id, icon, label, badge, sec, activePage, setActivePage }) => 
   return (
     <div 
       className={`nav-item ${activePage === id ? 'active' : ''}`} 
-      onClick={() => setActivePage(id)}
+      onClick={() => {
+        setActivePage(id);
+        document.body.classList.remove('sidebar-open');
+      }}
     >
       <span className="nav-icon">{icon}</span>
       {label}

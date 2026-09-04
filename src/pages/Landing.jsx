@@ -116,6 +116,16 @@ const FontLink = () => (
 
     /* marquee */
     .marquee-track { display:flex; animation:marquee 22s linear infinite; width:max-content; }
+
+    /* MOBILE RESPONSIVE FIXES */
+    @media (max-width: 900px) {
+      .display { font-size: clamp(32px, 8vw, 44px) !important; }
+      section { padding: 60px 20px !important; }
+      div[style*="gridTemplateColumns"] { grid-template-columns: 1fr !important; gap: 30px !important; }
+      nav { padding: 0 20px !important; }
+      nav > div:nth-child(2) { display: none !important; }
+      .product-card, .net-card { padding: 20px !important; }
+    }
   `}</style>
 );
 

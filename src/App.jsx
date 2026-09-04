@@ -84,6 +84,7 @@ function App() {
     <>
       <Bubbles />
       <div className="app">
+        <div className="sidebar-overlay" onClick={() => document.body.classList.remove('sidebar-open')}></div>
         <Sidebar />
         <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100vh', overflow: 'hidden' }}>
           <Header />
