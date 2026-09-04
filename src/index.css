@@ -3,12 +3,12 @@
    Dark Glassmorphism Premium
 ══════════════════════════════════════════════ */
 :root {
-  --orange:#FF9A76;--orange2:#FFB84D;--pink:#E85D75;--green:#7ED321;
-  --blue:#6B7FD6;--purple:#A855F7;--cyan:#22D3EE;--teal:#14B8A6;
+  --orange:#FF8C5A;--orange2:#FFB088;--pink:#F87171;--green:#34D399;
+  --blue:#6C8EEF;--purple:#8B5CF6;--cyan:#22D3EE;--teal:#14B8A6;
   --bg:#0A0D14;--surface:#111520;--surface2:#181E2E;--surface3:#1F2640;
   --glass:rgba(255,255,255,0.03);--glass2:rgba(255,255,255,0.06);--glass3:rgba(255,255,255,0.10);
   --text:#F0F4FF;--text2:#8B9CC8;--text3:#4A5578;--text4:#2A3456;
-  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);--border3:rgba(255,255,255,0.18);
+  --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.08);--border3:rgba(255,255,255,0.12);
   --font:'DM Sans',sans-serif;--mono:'IBM Plex Mono',monospace;
   --r:14px;--r2:10px;--r3:8px;
   --shadow:0 4px 24px rgba(0,0,0,0.5);--shadow2:0 8px 40px rgba(0,0,0,0.6);
@@ -54,6 +54,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
 @keyframes slideDown{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
 @keyframes glow{0%,100%{filter:drop-shadow(0 0 4px var(--orange))}50%{filter:drop-shadow(0 0 12px var(--orange))}}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
 
 /* LAYOUT */
 .app{display:grid;grid-template-columns:220px 1fr;grid-template-rows:64px 1fr;height:100vh;position:relative;z-index:1}
@@ -187,6 +188,8 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .btn-d{background:rgba(232,93,117,0.12);border:1px solid rgba(232,93,117,0.3);color:var(--pink)}
 .btn-b{background:rgba(107,127,214,0.12);border:1px solid rgba(107,127,214,0.3);color:var(--blue)}
 .btn-g{background:rgba(126,211,33,0.12);border:1px solid rgba(126,211,33,0.3);color:var(--green)}
+.btn-p{background:linear-gradient(135deg,var(--purple),var(--blue));color:#fff;box-shadow:0 4px 14px rgba(168,85,247,0.35)}
+.btn-p:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(168,85,247,0.5)}
 .btn-sm{padding:5px 12px;font-size:12px;border-radius:6px}
 
 /* BADGES */
@@ -329,9 +332,9 @@ tr:hover td{background:var(--glass);cursor:pointer}
 .sep{height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:4px 0}
 
 /* TAB GROUP */
-.tab-grp{display:flex;background:var(--glass2);border:1px solid var(--border);border-radius:var(--r3);padding:3px;width:fit-content}
-.tab-item{padding:5px 16px;border-radius:6px;font-size:12.5px;font-weight:500;cursor:pointer;color:var(--text2);transition:all 0.15s}
-.tab-item.active{background:var(--surface);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,0.4)}
+.tab-grp, .tabs{display:flex;background:var(--glass2);border:1px solid var(--border);border-radius:var(--r3);padding:3px;width:fit-content}
+.tab-item, .tab{padding:5px 16px;border-radius:6px;font-size:12.5px;font-weight:500;cursor:pointer;color:var(--text2);transition:all 0.15s;border:none;background:transparent}
+.tab-item.active, .tab.active{background:var(--surface);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,0.4)}
 
 /* NOTIFICATION BELL */
 .notif-panel{position:absolute;top:calc(100% + 8px);right:80px;width:300px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r);box-shadow:var(--shadow2);z-index:1000;display:none;animation:slideDown 0.2s ease}

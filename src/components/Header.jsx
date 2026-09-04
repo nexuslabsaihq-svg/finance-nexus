@@ -66,12 +66,17 @@ export default function Header() {
       </div>
       
       <div className="hdr-right">
-        <div className="period-group">
-          {['Enero', 'Febrero', 'Marzo'].map(p => (
-            <button key={p} className={`pbtn ${period === p ? 'active' : ''}`} onClick={() => setPeriod(p)}>
-              {p.substring(0, 3)}
-            </button>
-          ))}
+        <div className="period-group" style={{display:'flex', alignItems:'center'}}>
+          <select 
+            value={period} 
+            onChange={(e) => setPeriod(e.target.value)}
+            className="pbtn"
+            style={{ background: 'var(--surface2)', color: 'var(--text)', border: '1px solid var(--border)', padding: '4px 10px', borderRadius: 'var(--r3)', outline: 'none', cursor: 'pointer' }}
+          >
+            {['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'].map(p => (
+              <option key={p} value={p}>{p}</option>
+            ))}
+          </select>
         </div>
         
         <button className="hbtn" style={{ fontSize: 11, fontWeight: 700, fontFamily: 'var(--font)' }}>CLP</button>

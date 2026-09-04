@@ -24,8 +24,7 @@ const firebaseConfig = {
 export const HasKeys = !!(
   firebaseConfig.apiKey &&
   firebaseConfig.projectId &&
-  firebaseConfig.appId &&
-  import.meta.env.VITE_GEMINI_API_KEY
+  firebaseConfig.appId
 );
 
 // Clave de Gemini AI (solo para uso en llamadas a la API del lado del cliente)

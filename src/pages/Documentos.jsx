@@ -143,7 +143,7 @@ export default function Documentos() {
 
           {processing && (
             <div style={{flex:1, display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", background:"var(--surface2)", borderRadius:"16px", border:"1px solid var(--border)"}}>
-              <div style={{fontSize:"48px", animation:"pulse 1.5s infinite opacity", marginBottom:"10px"}}>✨</div>
+              <div style={{fontSize:"48px", animation:"pulse 1.5s infinite", marginBottom:"10px"}}>✨</div>
               <div style={{color:"var(--text2)", fontWeight:"600"}}>Gémini está analizando el documento...</div>
             </div>
           )}

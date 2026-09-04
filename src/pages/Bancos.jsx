@@ -12,6 +12,8 @@ export default function Bancos() {
     moneda: 'CLP',
     titular: authUser?.displayName || 'Usuario'
   });
+  
+  const [editId, setEditId] = useState(null);
 
   const total = bancos.reduce((s, b) => s + Number(b.saldo), 0);
   const totalCorriente = bancos.filter(b => b.tipo === 'Cuenta Corriente').reduce((s, b) => s + Number(b.saldo), 0);
@@ -22,18 +24,44 @@ export default function Bancos() {
     { bg: 'linear-gradient(135deg,rgba(255,154,118,0.15),rgba(255,154,118,0.04))', border: 'rgba(255,154,118,0.25)', text: 'var(--orange)', badge: 'VISA' },
     { bg: 'linear-gradient(135deg,rgba(107,127,214,0.15),rgba(107,127,214,0.04))', border: 'rgba(107,127,214,0.25)', text: 'var(--blue)', badge: 'MC' },
     { bg: 'linear-gradient(135deg,rgba(126,211,33,0.12),rgba(126,211,33,0.03))', border: 'rgba(126,211,33,0.2)', text: 'var(--green)', badge: '' },
-    { bg: 'linear-gradient(135deg,rgba(168,85,247,0.15),rgba(168,85,247,0.04))', border: 'rgba(168,85,247,0.25)', text: 'var(--purple)', badge: '' }
+    { bg: 'linear-gradient(135deg,rgba(168,85,247,0.15),rgba(168,85,247,0.04))', border: 'rgba(168,85,247,0.25)', text: 'var(--purple)', badge: '' },
+    { bg: 'linear-gradient(135deg,rgba(52,211,153,0.15),rgba(52,211,153,0.04))', border: 'rgba(52,211,153,0.25)', text: '#34d399', badge: '' }
   ];
 
-  const handleCreate = () => {
-    if (!form.nombre || !form.saldo) return;
-    const newRecord = { ...form, id: Date.now(), saldo: Number(form.saldo) };
-    setBancos([...bancos, newRecord]);
-    setForm({ ...form, numero: '', saldo: '' });
+  const handleCreateOrUpdate = () => {
+    if (!form.nombre || form.saldo === '') return;
+    const montoNum = Number(form.saldo);
+    
+    if (editId) {
+      setBancos(bancos.map(b => b.id === editId ? { ...b, ...form, saldo: montoNum } : b));
+      setEditId(null);
+    } else {
+      const newRecord = { ...form, id: Date.now().toString(), saldo: montoNum };
+      setBancos([...bancos, newRecord]);
+    }
+    
+    setForm({ nombre: 'Banco Santander', tipo: 'Cuenta Corriente', numero: '', saldo: '', moneda: 'CLP', titular: authUser?.displayName || 'Usuario' });
+  };
+
+  const handleEdit = (b) => {
+    setForm({
+      nombre: b.nombre,
+      tipo: b.tipo,
+      numero: b.numero || '',
+      saldo: b.saldo,
+      moneda: b.moneda || 'CLP',
+      titular: b.titular || authUser?.displayName || 'Usuario'
+    });
+    setEditId(b.id);
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
   };
 
   const handleDelete = (id) => {
     setBancos(bancos.filter(b => b.id !== id));
+    if (editId === id) {
+      setEditId(null);
+      setForm({ nombre: 'Banco Santander', tipo: 'Cuenta Corriente', numero: '', saldo: '', moneda: 'CLP', titular: authUser?.displayName || 'Usuario' });
+    }
   };
 
   return (
@@ -52,6 +80,28 @@ export default function Bancos() {
         <div className="sc sc-pu"><div className="sc-label">Efectivo</div><div className="sc-val" style={{color:"var(--purple)"}}>${totalEfectivo.toLocaleString()}</div><div className="sc-icon">💵</div></div>
       </div>
       
+      <div className="card">
+        <div className="card-hdr"><div className="card-title">Distribución de Fondos</div></div>
+        <div style={{display:'flex', width:'100%', height:'24px', borderRadius:'12px', overflow:'hidden', marginTop:'10px'}}>
+          {bancos.length === 0 && <div style={{width:'100%', background:'var(--surface2)'}}></div>}
+          {bancos.map((b, i) => {
+            const pct = total > 0 ? (b.saldo / total) * 100 : 0;
+            if (pct <= 0) return null;
+            return <div key={b.id} style={{width: `${pct}%`, background: colors[i % colors.length].text, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'10px', color:'#000', fontWeight:'bold', overflow:'hidden', whiteSpace:'nowrap'}} title={`${b.nombre} - ${pct.toFixed(1)}%`}>
+              {pct > 10 ? `${pct.toFixed(0)}%` : ''}
+            </div>
+          })}
+        </div>
+        <div style={{display:'flex', flexWrap:'wrap', gap:'15px', marginTop:'15px'}}>
+          {bancos.map((b, i) => (
+             <div key={b.id} style={{display:'flex', alignItems:'center', gap:'6px', fontSize:'12px'}}>
+               <div style={{width:'10px', height:'10px', borderRadius:'50%', background: colors[i % colors.length].text}}></div>
+               <span>{b.nombre}</span>
+             </div>
+          ))}
+        </div>
+      </div>
+      
       <div className="g3">
         {bancos.map((b, i) => {
           const c = colors[i % colors.length];
@@ -64,7 +114,8 @@ export default function Bancos() {
               {b.numero && <div style={{fontFamily:"var(--mono)",fontSize:"11px",color:"var(--text3)",letterSpacing:"1.5px",marginBottom:"6px"}}>{b.numero}</div>}
               <div style={{fontSize:"10px",color:"var(--text3)",marginBottom:"16px"}}>Titular: {b.titular}</div>
               <div style={{display:"flex",gap:"8px"}}>
-                <button className="btn btn-d btn-sm" onClick={() => handleDelete(b.id)}>🗑️ Eliminar</button>
+                <button className="btn btn-gh btn-sm" onClick={() => handleEdit(b)}>✏️ Editar</button>
+                <button className="btn btn-d btn-sm" onClick={() => handleDelete(b.id)}>🗑️</button>
               </div>
             </div>
           )
@@ -72,7 +123,7 @@ export default function Bancos() {
       </div>
       
       <div className="card">
-        <div className="card-hdr"><div className="card-title">➕ Agregar Nueva Cuenta</div></div>
+        <div className="card-hdr"><div className="card-title">{editId ? '✏️ Editar Cuenta' : '➕ Agregar Nueva Cuenta'}</div></div>
         <div className="fg fg2">
           <div className="fgrp"><label className="flbl">Banco</label>
             <select className="fsel" value={form.nombre} onChange={e => setForm({...form, nombre: e.target.value})}>
@@ -100,8 +151,11 @@ export default function Bancos() {
           </div>
         </div>
         <div style={{marginTop:"14px",display:"flex",gap:"8px"}}>
-          <button className="btn btn-o" onClick={handleCreate}>💾 Agregar Cuenta</button>
-          <button className="btn btn-gh" onClick={() => setForm({...form, numero: '', saldo: ''})}>Cancelar</button>
+          <button className="btn-p btn" style={{padding:'8px 16px'}} onClick={handleCreateOrUpdate}>💾 {editId ? 'Actualizar Cuenta' : 'Agregar Cuenta'}</button>
+          <button className="btn btn-gh" onClick={() => {
+            setEditId(null);
+            setForm({ nombre: 'Banco Santander', tipo: 'Cuenta Corriente', numero: '', saldo: '', moneda: 'CLP', titular: authUser?.displayName || 'Usuario' });
+          }}>Cancelar</button>
         </div>
       </div>
     </div>

@@ -1,13 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useAppData } from '../context/AppDataContext';
 import * as XLSX from 'xlsx';
 
 export default function Gastos() {
-  const { gastos, setGastos, presupuestos } = useAppData();
+  const { gastos, setGastos, presupuestos, configuracion, bancos } = useAppData();
   
-  const categoriasGastos = ['Alimentación', 'Vivienda', 'Transporte', 'Servicios', 'Ocio', 'Salud', 'Educación', 'Otros'];
+  const [form, setForm] = useState({ 
+    desc: '', 
+    cat: configuracion?.categorias?.[0] || 'Alimentación', 
+    monto: '', 
+    fecha: new Date().toISOString().split('T')[0], 
+    cuenta: bancos?.[0]?.nombre || 'Efectivo', 
+    recurrente: 'No' 
+  });
 
-  const [form, setForm] = useState({ desc: '', cat: 'Alimentación', monto: '', fecha: new Date().toISOString().split('T')[0], metodo: 'Tarjeta Débito', recurrente: 'No' });
+  const [filtroTexto, setFiltroTexto] = useState('');
+
+  const gastosFiltrados = useMemo(() => {
+    if(!filtroTexto) return gastos;
+    const lower = filtroTexto.toLowerCase();
+    return gastos.filter(g => 
+      g.desc.toLowerCase().includes(lower) || 
+      g.cat.toLowerCase().includes(lower) ||
+      g.cuenta?.toLowerCase().includes(lower)
+    );
+  }, [gastos, filtroTexto]);
 
   // KPIs
   const totalPresupuesto = presupuestos.reduce((s, p) => s + p.monto, 0);
@@ -23,9 +40,9 @@ export default function Gastos() {
 
   const handleCreate = () => {
     if(!form.desc || !form.monto) return;
-    const newRecord = { ...form, id: Date.now(), monto: Number(form.monto) };
+    const newRecord = { ...form, id: Date.now().toString(), monto: Number(form.monto) };
     setGastos([newRecord, ...gastos]);
-    setForm({ desc: '', cat: 'Alimentación', monto: '', fecha: new Date().toISOString().split('T')[0], metodo: 'Tarjeta Débito', recurrente: 'No' });
+    setForm({ desc: '', cat: configuracion?.categorias?.[0] || 'Alimentación', monto: '', fecha: new Date().toISOString().split('T')[0], cuenta: bancos?.[0]?.nombre || 'Efectivo', recurrente: 'No' });
   };
 
   const handleDelete = (id) => {
@@ -33,7 +50,7 @@ export default function Gastos() {
   };
 
   const exportCSV = () => {
-    const ws = XLSX.utils.json_to_sheet(gastos);
+    const ws = XLSX.utils.json_to_sheet(gastosFiltrados);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Gastos");
     XLSX.writeFile(wb, "Gastos.csv", { bookType: 'csv' });
@@ -55,6 +72,9 @@ export default function Gastos() {
       <div className="g2">
         <div className="card"><div className="card-hdr"><div className="card-title">Desglose por Categoría</div></div>
           <div className="tw"><table><thead><tr><th>Categoría</th><th className="r">Presupuesto</th><th className="r">Actual</th><th>Uso</th></tr></thead><tbody>
+            {desglose.length === 0 && (
+              <tr><td colSpan="4" style={{textAlign:'center', padding:'20px', color:'var(--text2)'}}>No hay presupuestos definidos. Configúralos en Análisis.</td></tr>
+            )}
             {desglose.map((d, i) => (
               <tr key={i}><td className="tdp">{d.cat}</td><td className="tdr tdm">${d.monto.toLocaleString()}</td><td className="tdr neg">${d.actual.toLocaleString()}</td><td><div style={{"display":"flex","alignItems":"center","gap":"8px"}}><div style={{"width":"80px"}}><div className="pt"><div className="pf" style={{"width":`${d.pct}%`,"background":"var(--orange)"}}></div></div></div><span style={{"fontSize":"11.5px","color":"var(--orange)","fontWeight":"700"}}>{d.pct}%</span></div></td></tr>
             ))}
@@ -63,19 +83,41 @@ export default function Gastos() {
         <div className="card"><div className="card-hdr"><div className="card-title">➕ Registrar Gasto</div></div>
           <div className="fg fg2">
             <div className="fgrp"><label className="flbl">Descripción</label><input className="finp" placeholder="Ej: Supermercado" value={form.desc} onChange={e=>setForm({...form, desc:e.target.value})}/></div>
-            <div className="fgrp"><label className="flbl">Categoría</label><select className="fsel" value={form.cat} onChange={e=>setForm({...form, cat:e.target.value})}>{categoriasGastos.map(c => <option key={c}>{c}</option>)}</select></div>
+            <div className="fgrp">
+              <label className="flbl">Categoría</label>
+              <select className="fsel" value={form.cat} onChange={e=>setForm({...form, cat:e.target.value})}>
+                {configuracion?.categorias?.map(c => <option key={c}>{c}</option>)}
+              </select>
+            </div>
             <div className="fgrp"><label className="flbl">Monto (CLP)</label><input className="finp" type="number" placeholder="$0" value={form.monto} onChange={e=>setForm({...form, monto:e.target.value})}/></div>
             <div className="fgrp"><label className="flbl">Fecha</label><input className="finp" type="date" value={form.fecha} onChange={e=>setForm({...form, fecha:e.target.value})}/></div>
-            <div className="fgrp"><label className="flbl">Método de Pago</label><select className="fsel" value={form.metodo} onChange={e=>setForm({...form, metodo:e.target.value})}><option>Tarjeta Débito</option><option>Tarjeta Crédito</option><option>Efectivo</option><option>Transferencia</option></select></div>
+            <div className="fgrp">
+              <label className="flbl">Cuenta / Banco</label>
+              <select className="fsel" value={form.cuenta} onChange={e=>setForm({...form, cuenta:e.target.value})}>
+                {bancos?.map(b => <option key={b.id}>{b.nombre}</option>)}
+                <option>Efectivo</option>
+              </select>
+            </div>
             <div className="fgrp"><label className="flbl">¿Es recurrente?</label><select className="fsel" value={form.recurrente} onChange={e=>setForm({...form, recurrente:e.target.value})}><option>No</option><option>Sí, mensual</option><option>Sí, anual</option></select></div>
           </div>
-          <div style={{"marginTop":"14px","display":"flex","gap":"8px"}}><button className="btn btn-o" onClick={handleCreate}>💾 Registrar</button><button className="btn btn-gh" onClick={() => setForm({ desc: '', cat: 'Alimentación', monto: '', fecha: new Date().toISOString().split('T')[0], metodo: 'Tarjeta Débito', recurrente: 'No' })}>Cancelar</button></div>
+          <div style={{"marginTop":"14px","display":"flex","gap":"8px"}}><button className="btn-p btn" style={{padding:'8px 16px'}} onClick={handleCreate}>💾 Registrar</button><button className="btn btn-gh" onClick={() => setForm({ desc: '', cat: configuracion?.categorias?.[0] || 'Alimentación', monto: '', fecha: new Date().toISOString().split('T')[0], cuenta: bancos?.[0]?.nombre || 'Efectivo', recurrente: 'No' })}>Cancelar</button></div>
         </div>
       </div>
-      <div className="card"><div className="card-hdr"><div className="card-title">Historial de Gastos</div><button className="btn btn-gh btn-sm" onClick={exportCSV}>⬇️ Exportar CSV</button></div>
-        <div className="tw"><table><thead><tr><th>Descripción</th><th>Categoría</th><th className="r">Monto</th><th>Fecha</th><th>Método</th><th>Acciones</th></tr></thead><tbody>
-          {gastos.map((g) => (
-            <tr key={g.id}><td className="tdp">🛒 {g.desc}{g.recurrente !== 'No' ? ' 🔄' : ''}</td><td><span className="badge bp">{g.cat}</span></td><td className="tdr neg">-${Number(g.monto).toLocaleString()}</td><td className="tdm" style={{"fontSize":"12px","color":"var(--text2)"}}>{g.fecha}</td><td>{g.metodo || g.cuenta}</td><td style={{"display":"flex","gap":"5px"}}><button className="btn btn-d btn-sm" onClick={() => handleDelete(g.id)}>🗑️</button></td></tr>
+      
+      <div className="card">
+        <div className="card-hdr" style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+          <div className="card-title">Historial de Gastos</div>
+          <div style={{display:'flex', gap:'10px'}}>
+            <input type="text" className="finp" placeholder="Buscar..." value={filtroTexto} onChange={e => setFiltroTexto(e.target.value)} style={{width: '200px', padding: '4px 8px'}} />
+            <button className="btn btn-gh btn-sm" onClick={exportCSV}>⬇️ Exportar CSV</button>
+          </div>
+        </div>
+        <div className="tw"><table><thead><tr><th>Descripción</th><th>Categoría</th><th className="r">Monto</th><th>Fecha</th><th>Cuenta</th><th>Acciones</th></tr></thead><tbody>
+          {gastosFiltrados.length === 0 && (
+            <tr><td colSpan="6" style={{textAlign:'center', padding:'20px', color:'var(--text2)'}}>No hay gastos registrados</td></tr>
+          )}
+          {gastosFiltrados.map((g) => (
+            <tr key={g.id}><td className="tdp">🛒 {g.desc}{g.recurrente !== 'No' ? ' 🔄' : ''}</td><td><span className="badge bp">{g.cat}</span></td><td className="tdr neg">-${Number(g.monto).toLocaleString()}</td><td className="tdm" style={{"fontSize":"12px","color":"var(--text2)"}}>{g.fecha}</td><td>{g.cuenta || g.metodo}</td><td style={{"display":"flex","gap":"5px"}}><button className="btn btn-d btn-sm" onClick={() => handleDelete(g.id)}>🗑️</button></td></tr>
           ))}
         </tbody></table></div>
       </div>

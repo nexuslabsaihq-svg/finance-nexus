@@ -90,7 +90,7 @@ export const AppDataProvider = ({ children }) => {
       });
       return () => unsubscribe();
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [authUser, key]);
+    }, [activeUid, key]);
 
     const setPersistentState = (newValueOrFn) => {
       setState(prev => {
@@ -111,12 +111,12 @@ export const AppDataProvider = ({ children }) => {
   });
 
   const [ingresos, setIngresos] = useFirestoreState('fn_ingresos', [
-    { id: 1, desc: 'Salario mensual', cat: 'Salario', monto: 2500000, fecha: '2025-03-01', fuente: 'Santander', notas: '' },
-    { id: 2, desc: 'Proyecto freelance', cat: 'Freelance', monto: 450000, fecha: '2025-03-10', fuente: 'Transferencia', notas: '' }
+    { id: 1, desc: 'Salario mensual', cat: 'Salario', monto: 2500000, fecha: '2025-03-01', cuenta: 'Banco Santander', notas: '' },
+    { id: 2, desc: 'Proyecto freelance', cat: 'Freelance', monto: 450000, fecha: '2025-03-10', cuenta: 'Banco Santander', notas: '' }
   ]);
 
   const [gastos, setGastos] = useFirestoreState('fn_gastos', [
-    { id: 1, desc: 'Arriendo', cat: 'Vivienda', monto: 800000, fecha: '2025-03-01', cuenta: 'Santander', notas: '' }
+    { id: 1, desc: 'Arriendo', cat: 'Vivienda', monto: 800000, fecha: '2025-03-01', cuenta: 'Banco Santander', notas: '' }
   ]);
 
   const [transferencias, setTransferencias] = useFirestoreState('fn_transferencias', []);

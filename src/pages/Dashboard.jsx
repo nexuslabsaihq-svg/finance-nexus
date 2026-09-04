@@ -329,7 +329,7 @@ export default function Dashboard({ period }) {
     <div className="card-hdr"><div className="card-title">🤖 Insights de IA Financiera</div><span className="card-action" onClick={() => setActivePage('ia')}>Hablar con la IA →</span></div>
     
     {loadingAi ? (
-      <div style={{padding:"20px", textAlign:"center", color:"var(--text2)", fontSize:"14px", animation:"pulse 1.5s infinite opacity"}}>
+      <div style={{padding:"20px", textAlign:"center", color:"var(--text2)", fontSize:"14px", animation:"pulse 1.5s infinite"}}>
         ✨ Gémini está analizando tus finanzas...
       </div>
     ) : aiInsights.length > 0 ? (
