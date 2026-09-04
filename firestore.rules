@@ -1,0 +1,37 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ============================================================
+    // BASE: denegar todo por defecto — seguridad por omisión
+    // ============================================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ============================================================
+    // DATOS DEL USUARIO — solo el dueño puede leer y escribir
+    // ============================================================
+    match /users/{userId}/appData/{module} {
+      allow read, write: if request.auth != null
+                         && request.auth.uid == userId;
+    }
+
+    // ============================================================
+    // COLABORADORES — el dueño los gestiona
+    // ============================================================
+    match /users/{userId}/collaborators/{collaboratorId} {
+      allow read, write, delete: if request.auth != null
+                                 && request.auth.uid == userId;
+    }
+
+    // ============================================================
+    // ACCESO DE COLABORADOR — puede leer datos del owner si fue invitado
+    // ============================================================
+    match /users/{userId}/appData/{module} {
+      allow read: if request.auth != null
+                  && exists(/databases/$(database)/documents/users/$(userId)/collaborators/$(request.auth.token.email));
+    }
+  }
+}

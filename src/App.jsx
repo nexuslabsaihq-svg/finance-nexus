@@ -17,7 +17,7 @@ import IA from './pages/IA';
 import Perfil from './pages/Perfil';
 import Configuracion from './pages/Configuracion';
 import Seguridad from './pages/Seguridad';
-import ConfigSetup from './pages/ConfigSetup';
+
 import Landing from './pages/Landing';
 
 import Documentos from './pages/Documentos';
@@ -33,7 +33,7 @@ const Bubbles = () => (
 );
 
 function App() {
-  const { activePage, period, setActivePage, HasKeys, authLoading, authUser, loginWithGoogle } = useAppData();
+  const { activePage, period, setActivePage, authLoading, authUser, loginWithGoogle } = useAppData();
   const [hash, setHash] = useState(window.location.hash);
 
   useEffect(() => {
@@ -42,9 +42,6 @@ function App() {
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
 
-  if (!HasKeys) {
-    return <ConfigSetup />;
-  }
 
   if (authLoading) {
     return (

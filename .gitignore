@@ -22,3 +22,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# ============================================================
+# SECRETOS — NUNCA versionar estos archivos en Git
+# ============================================================
+.env
+.env.local
+.env.production
+.env.staging
+.env.*.local

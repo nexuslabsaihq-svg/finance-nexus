@@ -3,26 +3,33 @@ import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
-// Usamos import.meta.env en Vite, pero si fallback es necesario (Configuración Vía UI) los leemos del localStorage
-const getLocalConfig = () => {
-  try {
-    const l = localStorage.getItem('fn_apikeys');
-    return l ? JSON.parse(l) : {};
-  } catch { return {}; }
-};
-
-const lkeys = getLocalConfig();
+// ================================================================
+// CONFIGURACIÓN SEGURA — Finance Nexus
+// Las credenciales se leen SOLO desde variables de entorno Vite.
+// NUNCA desde localStorage ni código hardcodeado.
+// Configura el archivo .env en la raíz del proyecto.
+// ================================================================
 
 const firebaseConfig = {
-  apiKey: (import.meta.env.VITE_FIREBASE_API_KEY || lkeys.VITE_FIREBASE_API_KEY)?.trim(),
-  authDomain: (import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || lkeys.VITE_FIREBASE_AUTH_DOMAIN)?.trim(),
-  projectId: (import.meta.env.VITE_FIREBASE_PROJECT_ID || lkeys.VITE_FIREBASE_PROJECT_ID)?.trim(),
-  storageBucket: (import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || lkeys.VITE_FIREBASE_STORAGE_BUCKET)?.trim(),
-  messagingSenderId: (import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || lkeys.VITE_FIREBASE_MESSAGING_SENDER_ID)?.trim(),
-  appId: (import.meta.env.VITE_FIREBASE_APP_ID || lkeys.VITE_FIREBASE_APP_ID)?.trim()
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
-export const HasKeys = !!(firebaseConfig.apiKey && firebaseConfig.projectId && (import.meta.env.VITE_GEMINI_API_KEY || lkeys.VITE_GEMINI_API_KEY)?.trim());
+// HasKeys: true si todas las variables críticas de Firebase + Gemini están presentes
+export const HasKeys = !!(
+  firebaseConfig.apiKey &&
+  firebaseConfig.projectId &&
+  firebaseConfig.appId &&
+  import.meta.env.VITE_GEMINI_API_KEY
+);
+
+// Clave de Gemini AI (solo para uso en llamadas a la API del lado del cliente)
+export const GeminaKey = import.meta.env.VITE_GEMINI_API_KEY || null;
 
 let app, auth, db, storage, provider;
 
@@ -34,10 +41,8 @@ if (HasKeys) {
     storage = getStorage(app);
     provider = new GoogleAuthProvider();
   } catch (error) {
-    console.error("Firebase config error:", error);
+    console.error("[Finance Nexus] Error al inicializar Firebase:", error.message);
   }
 }
-
-export const GeminaKey = import.meta.env.VITE_GEMINI_API_KEY || lkeys.VITE_GEMINI_API_KEY;
 
 export { app, auth, db, storage, provider };

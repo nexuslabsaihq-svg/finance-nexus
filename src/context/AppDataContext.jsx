@@ -23,10 +23,6 @@ export const AppDataProvider = ({ children }) => {
   const [activeUid, setActiveUid] = useState(null);
 
   useEffect(() => {
-    if (!HasKeys) {
-      setAuthLoading(false);
-      return;
-    }
 
     const unsub = onAuthStateChanged(auth, async (u) => {
       setAuthUser(u);
