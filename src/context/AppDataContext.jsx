@@ -49,9 +49,14 @@ export const AppDataProvider = ({ children }) => {
   const loginWithGoogle = async () => {
     try {
       setAuthError(null);
-      await signInWithPopup(auth, provider);
+      if (!auth || !provider) {
+        throw new Error("Firebase no está inicializado. Verifica que las variables de entorno de Firebase estén configuradas.");
+      }
+      const result = await signInWithPopup(auth, provider);
+      return result.user;
     } catch (e) {
       setAuthError(e.message);
+      throw e;
     }
   };
 

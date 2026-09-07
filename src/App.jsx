@@ -33,7 +33,7 @@ const Bubbles = () => (
 );
 
 function App() {
-  const { activePage, period, setActivePage, authLoading, authUser, loginWithGoogle } = useAppData();
+  const { activePage, period, setActivePage, authLoading, authUser, loginWithGoogle, authError } = useAppData();
   const [hash, setHash] = useState(window.location.hash);
 
   useEffect(() => {
@@ -54,7 +54,7 @@ function App() {
   const isAppView = hash === '#app';
 
   if (!isAppView || !authUser) {
-    return <Landing onLogin={loginWithGoogle} authUser={authUser} />;
+    return <Landing onLogin={loginWithGoogle} authUser={authUser} authError={authError} />;
   }
 
   const renderPage = () => {
