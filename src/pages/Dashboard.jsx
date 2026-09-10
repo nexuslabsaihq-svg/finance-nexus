@@ -137,7 +137,7 @@ export default function Dashboard({ period }) {
         <div className="g4">
           <Metric label="Ingresos del mes" value={formatCurrency(totalIngresos)} icon="💰" color="var(--orange)" detail={`${ingresosMes.length} movimiento(s) registrado(s)`} />
           <Metric label="Gastos del mes" value={formatCurrency(totalGastos)} icon="💸" color="var(--pink)" detail={`${gastosMes.length} movimiento(s) registrado(s)`} />
-          <Metric label="Flujo neto del mes" value={formatCurrency(Math.abs(flujoNeto))} icon="🎯" color={flujoNeto >= 0 ? 'var(--green)' : 'var(--pink)'} detail={flujoNeto >= 0 ? 'Superávit registrado' : 'Déficit registrado'} />
+          <Metric label="Flujo neto del mes" value={formatCurrency(flujoNeto)} icon="🎯" color={flujoNeto >= 0 ? 'var(--green)' : 'var(--pink)'} detail={flujoNeto >= 0 ? 'Superávit registrado' : 'Déficit registrado'} />
           <Metric label="Patrimonio neto" value={formatCurrency(patrimonioNeto)} icon="💎" color="var(--blue)" detail="Activos menos deuda registrada" />
           <Metric label="Tasa de ahorro" value={tasaAhorro === null ? 'Sin ingresos' : `${tasaAhorro.toFixed(1)}%`} icon="📊" color="var(--blue)" detail="Flujo neto sobre ingresos del mes" />
           <Metric label="Valor de inversiones" value={formatCurrency(totalInv)} icon="📈" color="var(--purple)" detail={`${inversiones.length} inversión(es) registrada(s)`} />

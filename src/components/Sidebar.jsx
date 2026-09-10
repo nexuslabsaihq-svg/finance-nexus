@@ -23,7 +23,7 @@ const NavItem = ({ id, icon, label, badge, sec, activePage, setActivePage }) => 
 export default function Sidebar() {
   const { activePage, setActivePage, logout, authUser, deudas, period } = useAppData();
   const periodPrefix = getPeriodPrefix(period);
-  const upcomingDebtCount = deudas.filter((d) => Number(d.balance ?? d.monto) > 0 && d.vencimiento?.startsWith(periodPrefix)).length;
+  const upcomingDebtCount = deudas.filter((d) => periodPrefix && Number(d.balance ?? d.monto) > 0 && d.vencimiento?.startsWith(periodPrefix)).length;
 
 
   return (
