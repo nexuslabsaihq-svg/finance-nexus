@@ -1,6 +1,9 @@
 import React from 'react';
 import { useAppData } from '../context/AppDataContext';
 import { BrandLogo } from '../pages/Landing';
+import { getPeriodPrefix } from '../utils/period';
+
+const toAmount = (value) => Number(value) || 0;
 
 const NavItem = ({ id, icon, label, badge, sec, activePage, setActivePage }) => {
   if (sec) return <div className="nav-sec">{sec}</div>;
@@ -20,8 +23,10 @@ const NavItem = ({ id, icon, label, badge, sec, activePage, setActivePage }) => 
 };
 
 export default function Sidebar() {
-  const { activePage, setActivePage, logout, authUser, deudas } = useAppData();
-  const upcomingDebtCount = deudas.filter(d => Number(d.balance ?? d.monto) > 0 && d.vencimiento).length;
+  const { activePage, setActivePage, logout, authUser, deudas, period } = useAppData();
+  const periodPrefix = getPeriodPrefix(period);
+  const activeDebts = deudas.filter((d) => toAmount(d.balance ?? d.monto) > 0);
+  const upcomingDebtCount = activeDebts.filter((d) => periodPrefix && d.vencimiento?.startsWith(periodPrefix)).length;
 
 
   return (
@@ -47,7 +52,7 @@ export default function Sidebar() {
       <NavItem sec="Finanzas" activePage={activePage} setActivePage={setActivePage} />
       <NavItem id="ahorros" icon="🎯" label="Ahorros" activePage={activePage} setActivePage={setActivePage} />
       <NavItem id="inversiones" icon="📈" label="Inversiones" activePage={activePage} setActivePage={setActivePage} />
-      <NavItem id="deudas" icon="📋" label="Deudas" badge={deudas.length || null} activePage={activePage} setActivePage={setActivePage} />
+      <NavItem id="deudas" icon="📋" label="Deudas" badge={activeDebts.length || null} activePage={activePage} setActivePage={setActivePage} />
       <NavItem id="estrategia" icon="🎲" label="Estrategia Deudas" activePage={activePage} setActivePage={setActivePage} />
       <NavItem id="fechas" icon="📅" label="Fechas de Pago" badge={upcomingDebtCount || null} activePage={activePage} setActivePage={setActivePage} />
 

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useAppData } from '../context/AppDataContext';
 import { GeminaKey } from '../firebase/config';
 import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
-import { getPeriodPrefix, getPreviousPeriodPrefixes, PERIOD_YEAR } from '../utils/period';
+import { getLocalDateString, getPeriodPrefix, getPreviousPeriodPrefixes, PERIOD_YEAR } from '../utils/period';
 
 const toAmount = (value) => {
   const amount = Number(value);
@@ -19,9 +19,12 @@ export default function Dashboard({ period }) {
   const [aiInsights, setAiInsights] = useState([]);
   const [loadingAi, setLoadingAi] = useState(true);
   const prefix = getPeriodPrefix(period);
+  const ingresosMes = filterByPeriod(ingresos, prefix);
+  const gastosMes = filterByPeriod(gastos, prefix);
 
   useEffect(() => {
-    if (!GeminaKey || (!ingresos.length && !gastos.length)) {
+    if (!GeminaKey || (!ingresosMes.length && !gastosMes.length)) {
+      setAiInsights([]);
       setLoadingAi(false);
       return;
     }
@@ -49,7 +52,7 @@ export default function Dashboard({ period }) {
             },
           },
         });
-        const prompt = `Analiza estos datos financieros: Ingresos: ${JSON.stringify(ingresos)}, Gastos: ${JSON.stringify(gastos)}, Ahorros: ${JSON.stringify(ahorros)}, Inversiones: ${JSON.stringify(inversiones)}, Deudas: ${JSON.stringify(deudas)}, Bancos: ${JSON.stringify(bancos)}. Genera exactamente 4 insights financieros (1 positivo, 1 alerta, 1 oportunidad, 1 urgente) basados en patrones de esta data particular. Evalúa salud financiera. Da montos precisos. No inventes.`;
+        const prompt = `Analiza estos datos financieros del período ${period} ${PERIOD_YEAR}: Ingresos: ${JSON.stringify(ingresosMes)}, Gastos: ${JSON.stringify(gastosMes)}, Ahorros: ${JSON.stringify(ahorros)}, Inversiones: ${JSON.stringify(inversiones)}, Deudas: ${JSON.stringify(deudas)}, Bancos: ${JSON.stringify(bancos)}. Genera exactamente 4 insights financieros (1 positivo, 1 alerta, 1 oportunidad, 1 urgente) basados en patrones de esta data particular. Evalúa salud financiera. Da montos precisos. No inventes.`;
         const result = await model.generateContent(prompt);
         setAiInsights(JSON.parse(result.response.text()));
       } catch (error) {
@@ -61,10 +64,8 @@ export default function Dashboard({ period }) {
     };
 
     fetchInsights();
-  }, [ingresos, gastos, ahorros, inversiones, deudas, bancos]);
+  }, [period, ingresosMes, gastosMes, ahorros, inversiones, deudas, bancos]);
 
-  const ingresosMes = filterByPeriod(ingresos, prefix);
-  const gastosMes = filterByPeriod(gastos, prefix);
   const totalIngresos = ingresosMes.reduce((sum, item) => sum + toAmount(item.monto), 0);
   const totalGastos = gastosMes.reduce((sum, item) => sum + toAmount(item.monto), 0);
   const flujoNeto = totalIngresos - totalGastos;
@@ -81,6 +82,7 @@ export default function Dashboard({ period }) {
 
   const monthlyHistory = useMemo(
     () => getPreviousPeriodPrefixes(period).map(({ label, prefix: monthPrefix }) => ({
+      prefix: monthPrefix,
       label,
       ingresos: filterByPeriod(ingresos, monthPrefix).reduce((sum, item) => sum + toAmount(item.monto), 0),
       gastos: filterByPeriod(gastos, monthPrefix).reduce((sum, item) => sum + toAmount(item.monto), 0),
@@ -102,13 +104,13 @@ export default function Dashboard({ period }) {
 
   const vencimientos = useMemo(
     () => deudas
-      .filter((debt) => debt.vencimiento && toAmount(debt.balance ?? debt.monto) > 0)
+      .filter((debt) => debt.vencimiento && debt.vencimiento.startsWith(prefix) && toAmount(debt.balance ?? debt.monto) > 0)
       .sort((a, b) => a.vencimiento.localeCompare(b.vencimiento))
       .slice(0, 4),
-    [deudas],
+    [deudas, prefix],
   );
-  const today = new Date().toISOString().slice(0, 10);
-  const recentTransactions = [...ingresos.map((item) => ({ ...item, type: 'Ingreso' })), ...gastos.map((item) => ({ ...item, type: 'Gasto' }))]
+  const today = getLocalDateString();
+  const recentTransactions = [...ingresosMes.map((item) => ({ ...item, type: 'Ingreso' })), ...gastosMes.map((item) => ({ ...item, type: 'Gasto' }))]
     .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
     .slice(0, 6);
   const distribution = [
@@ -135,7 +137,7 @@ export default function Dashboard({ period }) {
         <div className="g4">
           <Metric label="Ingresos del mes" value={formatCurrency(totalIngresos)} icon="💰" color="var(--orange)" detail={`${ingresosMes.length} movimiento(s) registrado(s)`} />
           <Metric label="Gastos del mes" value={formatCurrency(totalGastos)} icon="💸" color="var(--pink)" detail={`${gastosMes.length} movimiento(s) registrado(s)`} />
-          <Metric label="Flujo neto del mes" value={formatCurrency(Math.abs(flujoNeto))} icon="🎯" color={flujoNeto >= 0 ? 'var(--green)' : 'var(--pink)'} detail={flujoNeto >= 0 ? 'Superávit registrado' : 'Déficit registrado'} />
+          <Metric label="Flujo neto del mes" value={formatCurrency(flujoNeto)} icon="🎯" color={flujoNeto >= 0 ? 'var(--green)' : 'var(--pink)'} detail={flujoNeto >= 0 ? 'Superávit registrado' : 'Déficit registrado'} />
           <Metric label="Patrimonio neto" value={formatCurrency(patrimonioNeto)} icon="💎" color="var(--blue)" detail="Activos menos deuda registrada" />
           <Metric label="Tasa de ahorro" value={tasaAhorro === null ? 'Sin ingresos' : `${tasaAhorro.toFixed(1)}%`} icon="📊" color="var(--blue)" detail="Flujo neto sobre ingresos del mes" />
           <Metric label="Valor de inversiones" value={formatCurrency(totalInv)} icon="📈" color="var(--purple)" detail={`${inversiones.length} inversión(es) registrada(s)`} />
@@ -240,7 +242,7 @@ export default function Dashboard({ period }) {
         <div className="card-hdr"><div className="card-title">💳 Transacciones recientes</div></div>
         <div className="tw"><table>
           <thead><tr><th>Descripción</th><th>Tipo</th><th>Categoría</th><th className="r">Monto</th><th>Fecha</th><th>Cuenta</th></tr></thead>
-          <tbody>{recentTransactions.length === 0 ? <tr><td colSpan="6" style={{ textAlign: 'center', padding: '20px', color: 'var(--text2)' }}>No hay transacciones registradas todavía.</td></tr> : recentTransactions.map((transaction) => (
+          <tbody>{recentTransactions.length === 0 ? <tr><td colSpan="6" style={{ textAlign: 'center', padding: '20px', color: 'var(--text2)' }}>No hay transacciones registradas para este período.</td></tr> : recentTransactions.map((transaction) => (
             <tr key={`${transaction.type}-${transaction.id}`}><td className="tdp">{transaction.type === 'Ingreso' ? '💰' : '🛒'} {transaction.desc}</td><td><span className={`badge ${transaction.type === 'Ingreso' ? 'bg' : 'bp'}`}>{transaction.type}</span></td><td>{transaction.cat}</td><td className={`tdr ${transaction.type === 'Ingreso' ? 'pos' : 'neg'}`}>{transaction.type === 'Ingreso' ? '+' : '-'}{formatCurrency(transaction.monto)}</td><td className="tdm" style={{ fontSize: '11.5px', color: 'var(--text2)' }}>{transaction.fecha}</td><td>{transaction.fuente || transaction.cuenta || 'Sin cuenta'}</td></tr>
           ))}</tbody>
         </table></div>
