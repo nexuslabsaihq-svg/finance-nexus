@@ -81,6 +81,7 @@ export default function Dashboard({ period }) {
 
   const monthlyHistory = useMemo(
     () => getPreviousPeriodPrefixes(period).map(({ label, prefix: monthPrefix }) => ({
+      prefix: monthPrefix,
       label,
       ingresos: filterByPeriod(ingresos, monthPrefix).reduce((sum, item) => sum + toAmount(item.monto), 0),
       gastos: filterByPeriod(gastos, monthPrefix).reduce((sum, item) => sum + toAmount(item.monto), 0),
@@ -102,10 +103,10 @@ export default function Dashboard({ period }) {
 
   const vencimientos = useMemo(
     () => deudas
-      .filter((debt) => debt.vencimiento && toAmount(debt.balance ?? debt.monto) > 0)
+      .filter((debt) => debt.vencimiento && debt.vencimiento.startsWith(prefix) && toAmount(debt.balance ?? debt.monto) > 0)
       .sort((a, b) => a.vencimiento.localeCompare(b.vencimiento))
       .slice(0, 4),
-    [deudas],
+    [deudas, prefix],
   );
   const today = new Date().toISOString().slice(0, 10);
   const recentTransactions = [...ingresos.map((item) => ({ ...item, type: 'Ingreso' })), ...gastos.map((item) => ({ ...item, type: 'Gasto' }))]
