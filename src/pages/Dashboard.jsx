@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useAppData } from '../context/AppDataContext';
 import { GeminaKey } from '../firebase/config';
 import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
-import { getPeriodPrefix, getPreviousPeriodPrefixes, PERIOD_YEAR } from '../utils/period';
+import { getLocalDateString, getPeriodPrefix, getPreviousPeriodPrefixes, PERIOD_YEAR } from '../utils/period';
 
 const toAmount = (value) => {
   const amount = Number(value);
@@ -109,7 +109,7 @@ export default function Dashboard({ period }) {
       .slice(0, 4),
     [deudas, prefix],
   );
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getLocalDateString();
   const recentTransactions = [...ingresosMes.map((item) => ({ ...item, type: 'Ingreso' })), ...gastosMes.map((item) => ({ ...item, type: 'Gasto' }))]
     .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
     .slice(0, 6);
@@ -242,7 +242,7 @@ export default function Dashboard({ period }) {
         <div className="card-hdr"><div className="card-title">💳 Transacciones recientes</div></div>
         <div className="tw"><table>
           <thead><tr><th>Descripción</th><th>Tipo</th><th>Categoría</th><th className="r">Monto</th><th>Fecha</th><th>Cuenta</th></tr></thead>
-          <tbody>{recentTransactions.length === 0 ? <tr><td colSpan="6" style={{ textAlign: 'center', padding: '20px', color: 'var(--text2)' }}>No hay transacciones registradas todavía.</td></tr> : recentTransactions.map((transaction) => (
+          <tbody>{recentTransactions.length === 0 ? <tr><td colSpan="6" style={{ textAlign: 'center', padding: '20px', color: 'var(--text2)' }}>No hay transacciones registradas para este período.</td></tr> : recentTransactions.map((transaction) => (
             <tr key={`${transaction.type}-${transaction.id}`}><td className="tdp">{transaction.type === 'Ingreso' ? '💰' : '🛒'} {transaction.desc}</td><td><span className={`badge ${transaction.type === 'Ingreso' ? 'bg' : 'bp'}`}>{transaction.type}</span></td><td>{transaction.cat}</td><td className={`tdr ${transaction.type === 'Ingreso' ? 'pos' : 'neg'}`}>{transaction.type === 'Ingreso' ? '+' : '-'}{formatCurrency(transaction.monto)}</td><td className="tdm" style={{ fontSize: '11.5px', color: 'var(--text2)' }}>{transaction.fecha}</td><td>{transaction.fuente || transaction.cuenta || 'Sin cuenta'}</td></tr>
           ))}</tbody>
         </table></div>

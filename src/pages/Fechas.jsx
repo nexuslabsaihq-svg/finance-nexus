@@ -1,13 +1,13 @@
 import React, { useMemo } from 'react';
 import { useAppData } from '../context/AppDataContext';
-import { getPeriodPrefix, PERIOD_YEAR } from '../utils/period';
+import { getLocalDateString, getPeriodPrefix, PERIOD_YEAR } from '../utils/period';
 
 const toAmount = (value) => Number(value) || 0;
 
 export default function Fechas({ period }) {
   const { deudas } = useAppData();
   const prefix = getPeriodPrefix(period);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getLocalDateString();
   const vencimientos = useMemo(
     () => deudas
       .filter((debt) => debt.vencimiento && prefix && debt.vencimiento.startsWith(prefix) && toAmount(debt.balance ?? debt.monto) > 0)
