@@ -1,19 +1,14 @@
 import React from 'react';
 import { useAppData } from '../context/AppDataContext';
+import { getPeriodPrefix } from '../utils/period';
 
 export default function Flujo({ period }) {
   const { ingresos, gastos } = useAppData();
 
-  const getMonthPrefix = (p) => {
-    if(p === 'Enero') return '2025-01';
-    if(p === 'Febrero') return '2025-02';
-    if(p === 'Marzo') return '2025-03';
-    return '';
-  };
-  const prefix = getMonthPrefix(period);
+  const prefix = getPeriodPrefix(period);
 
-  const ingresosMes = ingresos.filter(i => i.fecha && i.fecha.startsWith(prefix));
-  const gastosMes = gastos.filter(g => g.fecha && g.fecha.startsWith(prefix));
+  const ingresosMes = ingresos.filter(i => i.fecha && prefix && i.fecha.startsWith(prefix));
+  const gastosMes = gastos.filter(g => g.fecha && prefix && g.fecha.startsWith(prefix));
 
   const totalIngresos = ingresosMes.reduce((sum, i) => sum + Number(i.monto), 0);
   const totalGastos = gastosMes.reduce((sum, g) => sum + Number(g.monto), 0);

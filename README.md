@@ -1,16 +1,29 @@
-# React + Vite
+# Finance Nexus
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Aplicación React/Vite para registrar movimientos y consultar un resumen financiero personal.
 
-Currently, two official plugins are available:
+## Desarrollo
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```bash
+npm install
+npm run dev
+```
 
-## React Compiler
+Comandos disponibles:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- `npm run lint`
+- `npm run build`
 
-## Expanding the ESLint configuration
+La aplicación requiere las variables `VITE_FIREBASE_*` descritas en `.env.example` para autenticación y persistencia. Las claves no se almacenan en el repositorio.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Estado de Phase 0
+
+- El dashboard calcula ingresos, gastos, flujo neto, tasa de ahorro, patrimonio neto, bancos, ahorros, inversiones y deudas desde el estado de la aplicación.
+- El selector global filtra los doce meses de 2025 en Dashboard, Flujo de Caja y Fechas de Pago.
+- Las inversiones usan `actual`/`invertido` y las deudas usan `balance`/`pagoMensual`/`vencimiento`. Las importaciones de documentos ahora crean deudas con ese esquema.
+- Las cuentas, movimientos y metas comienzan vacíos para usuarios nuevos; la aplicación no crea datos financieros de demostración.
+- Fechas de Pago muestra únicamente vencimientos de deudas registrados. Los recordatorios generales no están implementados.
+- Documentos puede extraer y registrar datos, pero no almacena archivos ni ofrece una biblioteca de archivos.
+- Seguridad muestra el alcance actual del acceso mediante Google. La administración de contraseña, 2FA, sesiones, exportación y eliminación de cuenta está diferida.
+
+Las políticas de Firestore, el modelo de tenencia y colaboradores, Firebase Authentication, Storage, Gemini, precios, facturación y aspectos legales/comerciales no se modificaron en esta fase.

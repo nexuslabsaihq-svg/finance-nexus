@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAppData } from '../context/AppDataContext';
+import { MONTH_NAMES } from '../utils/period';
 
 export default function Header() {
   const { period, setPeriod, usuario, logout, setActivePage, notificaciones, setNotificaciones, ingresos, gastos, authUser } = useAppData();
@@ -78,7 +79,7 @@ export default function Header() {
             className="pbtn"
             style={{ background: 'var(--surface2)', color: 'var(--text)', border: '1px solid var(--border)', padding: '4px 10px', borderRadius: 'var(--r3)', outline: 'none', cursor: 'pointer' }}
           >
-            {['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'].map(p => (
+            {MONTH_NAMES.map(p => (
               <option key={p} value={p}>{p}</option>
             ))}
           </select>

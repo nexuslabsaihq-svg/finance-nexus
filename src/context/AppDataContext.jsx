@@ -115,22 +115,13 @@ export const AppDataProvider = ({ children }) => {
     nombre: authUser?.displayName?.split(' ')[0] || 'Usuario', apellidos: authUser?.displayName?.split(' ').slice(1).join(' ') || '', email: authUser?.email || '', telefono: '+56 9 1234 5678', plan: 'PRO', foto: authUser?.photoURL || null
   });
 
-  const [ingresos, setIngresos] = useFirestoreState('fn_ingresos', [
-    { id: 1, desc: 'Salario mensual', cat: 'Salario', monto: 2500000, fecha: '2025-03-01', cuenta: 'Banco Santander', notas: '' },
-    { id: 2, desc: 'Proyecto freelance', cat: 'Freelance', monto: 450000, fecha: '2025-03-10', cuenta: 'Banco Santander', notas: '' }
-  ]);
+  const [ingresos, setIngresos] = useFirestoreState('fn_ingresos', []);
 
-  const [gastos, setGastos] = useFirestoreState('fn_gastos', [
-    { id: 1, desc: 'Arriendo', cat: 'Vivienda', monto: 800000, fecha: '2025-03-01', cuenta: 'Banco Santander', notas: '' }
-  ]);
+  const [gastos, setGastos] = useFirestoreState('fn_gastos', []);
 
   const [transferencias, setTransferencias] = useFirestoreState('fn_transferencias', []);
-  const [bancos, setBancos] = useFirestoreState('fn_bancos', [
-    { id: 1, nombre: 'Banco Santander', tipo: 'Corriente', saldo: 1452230, numero: '**** 5678', moneda: 'CLP' }
-  ]);
-  const [ahorros, setAhorros] = useFirestoreState('fn_ahorros', [
-    { id: 1, nombre: 'Vivienda', objetivo: 50000000, actual: 12500000, color: 'var(--orange)' }
-  ]);
+  const [bancos, setBancos] = useFirestoreState('fn_bancos', []);
+  const [ahorros, setAhorros] = useFirestoreState('fn_ahorros', []);
   const [inversiones, setInversiones] = useFirestoreState('fn_inversiones', []);
   const [deudas, setDeudas] = useFirestoreState('fn_deudas', []);
   const [presupuestos, setPresupuestos] = useFirestoreState('fn_presupuestos', []);
