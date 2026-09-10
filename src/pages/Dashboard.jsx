@@ -19,9 +19,12 @@ export default function Dashboard({ period }) {
   const [aiInsights, setAiInsights] = useState([]);
   const [loadingAi, setLoadingAi] = useState(true);
   const prefix = getPeriodPrefix(period);
+  const ingresosMes = filterByPeriod(ingresos, prefix);
+  const gastosMes = filterByPeriod(gastos, prefix);
 
   useEffect(() => {
-    if (!GeminaKey || (!ingresos.length && !gastos.length)) {
+    if (!GeminaKey || (!ingresosMes.length && !gastosMes.length)) {
+      setAiInsights([]);
       setLoadingAi(false);
       return;
     }
@@ -49,7 +52,7 @@ export default function Dashboard({ period }) {
             },
           },
         });
-        const prompt = `Analiza estos datos financieros: Ingresos: ${JSON.stringify(ingresos)}, Gastos: ${JSON.stringify(gastos)}, Ahorros: ${JSON.stringify(ahorros)}, Inversiones: ${JSON.stringify(inversiones)}, Deudas: ${JSON.stringify(deudas)}, Bancos: ${JSON.stringify(bancos)}. Genera exactamente 4 insights financieros (1 positivo, 1 alerta, 1 oportunidad, 1 urgente) basados en patrones de esta data particular. Evalúa salud financiera. Da montos precisos. No inventes.`;
+        const prompt = `Analiza estos datos financieros del período ${period} ${PERIOD_YEAR}: Ingresos: ${JSON.stringify(ingresosMes)}, Gastos: ${JSON.stringify(gastosMes)}, Ahorros: ${JSON.stringify(ahorros)}, Inversiones: ${JSON.stringify(inversiones)}, Deudas: ${JSON.stringify(deudas)}, Bancos: ${JSON.stringify(bancos)}. Genera exactamente 4 insights financieros (1 positivo, 1 alerta, 1 oportunidad, 1 urgente) basados en patrones de esta data particular. Evalúa salud financiera. Da montos precisos. No inventes.`;
         const result = await model.generateContent(prompt);
         setAiInsights(JSON.parse(result.response.text()));
       } catch (error) {
@@ -61,10 +64,8 @@ export default function Dashboard({ period }) {
     };
 
     fetchInsights();
-  }, [ingresos, gastos, ahorros, inversiones, deudas, bancos]);
+  }, [period, ingresosMes, gastosMes, ahorros, inversiones, deudas, bancos]);
 
-  const ingresosMes = filterByPeriod(ingresos, prefix);
-  const gastosMes = filterByPeriod(gastos, prefix);
   const totalIngresos = ingresosMes.reduce((sum, item) => sum + toAmount(item.monto), 0);
   const totalGastos = gastosMes.reduce((sum, item) => sum + toAmount(item.monto), 0);
   const flujoNeto = totalIngresos - totalGastos;
@@ -109,7 +110,7 @@ export default function Dashboard({ period }) {
     [deudas, prefix],
   );
   const today = new Date().toISOString().slice(0, 10);
-  const recentTransactions = [...ingresos.map((item) => ({ ...item, type: 'Ingreso' })), ...gastos.map((item) => ({ ...item, type: 'Gasto' }))]
+  const recentTransactions = [...ingresosMes.map((item) => ({ ...item, type: 'Ingreso' })), ...gastosMes.map((item) => ({ ...item, type: 'Gasto' }))]
     .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
     .slice(0, 6);
   const distribution = [

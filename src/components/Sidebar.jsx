@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAppData } from '../context/AppDataContext';
 import { BrandLogo } from '../pages/Landing';
+import { getPeriodPrefix } from '../utils/period';
 
 const NavItem = ({ id, icon, label, badge, sec, activePage, setActivePage }) => {
   if (sec) return <div className="nav-sec">{sec}</div>;
@@ -20,8 +21,9 @@ const NavItem = ({ id, icon, label, badge, sec, activePage, setActivePage }) => 
 };
 
 export default function Sidebar() {
-  const { activePage, setActivePage, logout, authUser, deudas } = useAppData();
-  const upcomingDebtCount = deudas.filter(d => Number(d.balance ?? d.monto) > 0 && d.vencimiento).length;
+  const { activePage, setActivePage, logout, authUser, deudas, period } = useAppData();
+  const periodPrefix = getPeriodPrefix(period);
+  const upcomingDebtCount = deudas.filter((d) => Number(d.balance ?? d.monto) > 0 && d.vencimiento?.startsWith(periodPrefix)).length;
 
 
   return (
