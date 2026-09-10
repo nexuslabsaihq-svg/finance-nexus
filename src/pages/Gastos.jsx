@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { useAppData } from '../context/AppDataContext';
 import * as XLSX from 'xlsx';
+import ComprobanteUploader from '../components/ComprobanteUploader';
+import { deleteComprobante } from '../firebase/storage';
 
 export default function Gastos() {
   const { gastos, setGastos, presupuestos, configuracion, bancos } = useAppData();
@@ -13,6 +15,7 @@ export default function Gastos() {
     cuenta: bancos?.[0]?.nombre || 'Efectivo', 
     recurrente: 'No' 
   });
+  const [comprobante, setComprobante] = useState(null);
 
   const [filtroTexto, setFiltroTexto] = useState('');
 
@@ -40,12 +43,15 @@ export default function Gastos() {
 
   const handleCreate = () => {
     if(!form.desc || !form.monto) return;
-    const newRecord = { ...form, id: Date.now().toString(), monto: Number(form.monto) };
+    const newRecord = { ...form, id: Date.now().toString(), monto: Number(form.monto), comprobante: comprobante || null };
     setGastos([newRecord, ...gastos]);
     setForm({ desc: '', cat: configuracion?.categorias?.[0] || 'Alimentación', monto: '', fecha: new Date().toISOString().split('T')[0], cuenta: bancos?.[0]?.nombre || 'Efectivo', recurrente: 'No' });
+    setComprobante(null);
   };
 
   const handleDelete = (id) => {
+    const item = gastos.find(i => i.id === id);
+    if (item?.comprobante?.path) deleteComprobante(item.comprobante.path);
     setGastos(gastos.filter(i => i.id !== id));
   };
 
@@ -100,7 +106,8 @@ export default function Gastos() {
             </div>
             <div className="fgrp"><label className="flbl">¿Es recurrente?</label><select className="fsel" value={form.recurrente} onChange={e=>setForm({...form, recurrente:e.target.value})}><option>No</option><option>Sí, mensual</option><option>Sí, anual</option></select></div>
           </div>
-          <div style={{"marginTop":"14px","display":"flex","gap":"8px"}}><button className="btn-p btn" style={{padding:'8px 16px'}} onClick={handleCreate}>💾 Registrar</button><button className="btn btn-gh" onClick={() => setForm({ desc: '', cat: configuracion?.categorias?.[0] || 'Alimentación', monto: '', fecha: new Date().toISOString().split('T')[0], cuenta: bancos?.[0]?.nombre || 'Efectivo', recurrente: 'No' })}>Cancelar</button></div>
+          <ComprobanteUploader modulo="gastos" value={comprobante} onChange={setComprobante} />
+          <div style={{"marginTop":"14px","display":"flex","gap":"8px"}}><button className="btn-p btn" style={{padding:'8px 16px'}} onClick={handleCreate}>💾 Registrar</button><button className="btn btn-gh" onClick={() => { setForm({ desc: '', cat: configuracion?.categorias?.[0] || 'Alimentación', monto: '', fecha: new Date().toISOString().split('T')[0], cuenta: bancos?.[0]?.nombre || 'Efectivo', recurrente: 'No' }); setComprobante(null); }}>Cancelar</button></div>
         </div>
       </div>
       
@@ -117,7 +124,7 @@ export default function Gastos() {
             <tr><td colSpan="6" style={{textAlign:'center', padding:'20px', color:'var(--text2)'}}>No hay gastos registrados</td></tr>
           )}
           {gastosFiltrados.map((g) => (
-            <tr key={g.id}><td className="tdp">🛒 {g.desc}{g.recurrente !== 'No' ? ' 🔄' : ''}</td><td><span className="badge bp">{g.cat}</span></td><td className="tdr neg">-${Number(g.monto).toLocaleString()}</td><td className="tdm" style={{"fontSize":"12px","color":"var(--text2)"}}>{g.fecha}</td><td>{g.cuenta || g.metodo}</td><td style={{"display":"flex","gap":"5px"}}><button className="btn btn-d btn-sm" onClick={() => handleDelete(g.id)}>🗑️</button></td></tr>
+            <tr key={g.id}><td className="tdp">🛒 {g.desc}{g.recurrente !== 'No' ? ' 🔄' : ''}</td><td><span className="badge bp">{g.cat}</span></td><td className="tdr neg">-${Number(g.monto).toLocaleString()}</td><td className="tdm" style={{"fontSize":"12px","color":"var(--text2)"}}>{g.fecha}</td><td>{g.cuenta || g.metodo}</td><td style={{"display":"flex","gap":"5px","alignItems":"center"}}>{g.comprobante?.url && <a href={g.comprobante.url} target="_blank" rel="noopener noreferrer" title={g.comprobante.name}>📎</a>}<button className="btn btn-d btn-sm" onClick={() => handleDelete(g.id)}>🗑️</button></td></tr>
           ))}
         </tbody></table></div>
       </div>

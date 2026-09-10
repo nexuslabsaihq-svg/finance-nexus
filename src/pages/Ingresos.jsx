@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { useAppData } from '../context/AppDataContext';
 import * as XLSX from 'xlsx';
+import ComprobanteUploader from '../components/ComprobanteUploader';
+import { deleteComprobante } from '../firebase/storage';
 
 export default function Ingresos() {
   const { ingresos, setIngresos, bancos, configuracion } = useAppData();
@@ -13,6 +15,7 @@ export default function Ingresos() {
     cuenta: bancos?.[0]?.nombre || 'Efectivo', 
     notas: '' 
   });
+  const [comprobante, setComprobante] = useState(null);
   
   const [filtroTexto, setFiltroTexto] = useState('');
 
@@ -32,12 +35,15 @@ export default function Ingresos() {
 
   const handleCreate = () => {
     if(!form.desc || !form.monto) return;
-    const newRecord = { ...form, id: Date.now().toString(), monto: Number(form.monto) };
+    const newRecord = { ...form, id: Date.now().toString(), monto: Number(form.monto), comprobante: comprobante || null };
     setIngresos([newRecord, ...ingresos]);
     setForm({ desc: '', cat: configuracion?.categorias?.[0] || 'Salario', monto: '', fecha: new Date().toISOString().split('T')[0], cuenta: bancos?.[0]?.nombre || 'Efectivo', notas: '' });
+    setComprobante(null);
   };
 
   const handleDelete = (id) => {
+    const item = ingresos.find(i => i.id === id);
+    if (item?.comprobante?.path) deleteComprobante(item.comprobante.path);
     setIngresos(ingresos.filter(i => i.id !== id));
   };
 
@@ -126,7 +132,8 @@ export default function Ingresos() {
           </div>
           <div className="fgrp"><label className="flbl">Notas</label><input className="finp" placeholder="Opcional..." value={form.notas} onChange={e=>setForm({...form, notas:(e.target.value)})}/></div>
         </div>
-        <div style={{"marginTop":"14px","display":"flex","gap":"8px"}}><button className="btn-p btn" onClick={handleCreate} style={{padding:'8px 16px'}}>💾 Guardar</button><button className="btn btn-gh" onClick={() => setForm({ desc: '', cat: configuracion?.categorias?.[0]||'Salario', monto: '', fecha: new Date().toISOString().split('T')[0], cuenta: bancos?.[0]?.nombre||'Efectivo', notas: '' })}>Cancelar</button></div>
+        <ComprobanteUploader modulo="ingresos" value={comprobante} onChange={setComprobante} />
+        <div style={{"marginTop":"14px","display":"flex","gap":"8px"}}><button className="btn-p btn" onClick={handleCreate} style={{padding:'8px 16px'}}>💾 Guardar</button><button className="btn btn-gh" onClick={() => { setForm({ desc: '', cat: configuracion?.categorias?.[0]||'Salario', monto: '', fecha: new Date().toISOString().split('T')[0], cuenta: bancos?.[0]?.nombre||'Efectivo', notas: '' }); setComprobante(null); }}>Cancelar</button></div>
       </div>
       
       <div className="card">
@@ -142,7 +149,7 @@ export default function Ingresos() {
             <tr><td colSpan="6" style={{textAlign:'center', padding:'20px', color:'var(--text2)'}}>No hay ingresos registrados</td></tr>
           )}
           {ingresosFiltrados.map(i => (
-            <tr key={i.id}><td className="tdp">💰 {i.desc}</td><td><span className="badge bb">{i.cat}</span></td><td className="tdr pos">+${Number(i.monto).toLocaleString()}</td><td className="tdm" style={{"fontSize":"12px","color":"var(--text2)"}}>{i.fecha}</td><td>{i.cuenta}</td><td style={{"display":"flex","gap":"5px"}}><button className="btn btn-d btn-sm" onClick={()=>handleDelete(i.id)}>🗑️</button></td></tr>
+            <tr key={i.id}><td className="tdp">💰 {i.desc}</td><td><span className="badge bb">{i.cat}</span></td><td className="tdr pos">+${Number(i.monto).toLocaleString()}</td><td className="tdm" style={{"fontSize":"12px","color":"var(--text2)"}}>{i.fecha}</td><td>{i.cuenta}</td><td style={{"display":"flex","gap":"5px","alignItems":"center"}}>{i.comprobante?.url && <a href={i.comprobante.url} target="_blank" rel="noopener noreferrer" title={i.comprobante.name}>📎</a>}<button className="btn btn-d btn-sm" onClick={()=>handleDelete(i.id)}>🗑️</button></td></tr>
           ))}
         </tbody></table></div>
       </div>

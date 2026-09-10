@@ -1,0 +1,29 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ============================================================
+    // BASE: denegar todo por defecto — seguridad por omisión
+    // ============================================================
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+
+    // ============================================================
+    // COMPROBANTES DEL USUARIO
+    // Ruta: users/{userId}/comprobantes/{modulo}/{archivo}
+    // Solo el dueño autenticado puede leer, subir o eliminar sus archivos.
+    // ============================================================
+    match /users/{userId}/comprobantes/{modulo}/{fileName} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+
+      allow create: if request.auth != null
+                    && request.auth.uid == userId
+                    && request.resource.size < 10 * 1024 * 1024
+                    && request.resource.contentType.matches('image/(jpeg|png|webp)|application/pdf');
+
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}

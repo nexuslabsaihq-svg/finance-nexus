@@ -2,15 +2,20 @@ import React, { useState, useRef } from 'react';
 import { useAppData } from '../context/AppDataContext';
 import { GeminaKey } from '../firebase/config';
 import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
+import ComprobanteUploader from '../components/ComprobanteUploader';
+import { uploadComprobante } from '../firebase/storage';
 
 export default function Documentos() {
-  const { ingresos, setIngresos, gastos, setGastos, deudas, setDeudas } = useAppData();
+  const { ingresos, setIngresos, gastos, setGastos, deudas, setDeudas, activeUid } = useAppData();
   
   // Local states
   const [activeTab, setActiveTab] = useState('import'); // 'import', 'manual', 'library'
   const [dragActive, setDragActive] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [extractedData, setExtractedData] = useState(null); // the parsed JSON from Gemini
+  const [uploadingImport, setUploadingImport] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+  const [manualComprobante, setManualComprobante] = useState(null);
 
   const fileInputRef = useRef(null);
 
@@ -85,8 +90,26 @@ export default function Documentos() {
     }
   };
 
-  const confirmImport = () => {
+  const confirmImport = async () => {
     if(!extractedData) return;
+    setUploadError('');
+    let comprobante = null;
+    if (extractedData.fileObj) {
+      if (!activeUid) {
+        setUploadError('Debes iniciar sesión para guardar el comprobante.');
+        return;
+      }
+      setUploadingImport(true);
+      try {
+        comprobante = await uploadComprobante(activeUid, extractedData.fileObj, 'documentos');
+      } catch (e) {
+        setUploadingImport(false);
+        setUploadError(e.message);
+        return;
+      }
+      setUploadingImport(false);
+    }
+
     const item = {
       id: Date.now(),
       desc: extractedData.desc,
@@ -96,6 +119,7 @@ export default function Documentos() {
       notas: `Doc: ${extractedData.fileName}`,
       fuente: extractedData.modulo === 'ingresos' ? 'Pendiente' : undefined,
       cuenta: extractedData.modulo === 'gastos' ? 'Pendiente' : undefined,
+      comprobante,
     };
     if (extractedData.modulo === 'ingresos') setIngresos(prev => [item, ...prev]);
     if (extractedData.modulo === 'gastos') setGastos(prev => [item, ...prev]);
@@ -109,7 +133,8 @@ export default function Documentos() {
         tasa: 0,
         vencimiento: item.fecha,
         progreso: 0,
-        notas: item.notas
+        notas: item.notas,
+        comprobante,
       }, ...prev]);
     }
     
@@ -122,7 +147,7 @@ export default function Documentos() {
       <div className="page-hdr">
         <div>
           <div className="page-title">📂 Documentos Inteligentes</div>
-          <div className="page-sub">Análisis y registro de datos extraídos; los archivos no se almacenan.</div>
+          <div className="page-sub">Análisis de documentos con IA y almacenamiento seguro de comprobantes por usuario.</div>
         </div>
       </div>
       
@@ -188,13 +213,16 @@ export default function Documentos() {
                 <div style={{width:"250px", background:"var(--surface)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", borderRadius:"12px", border:"1px dashed var(--border)", color:"var(--text3)", padding:"15px", textAlign:"center"}}>
                   <div style={{fontSize:"40px", marginBottom:"10px"}}>📄</div>
                   <div style={{fontSize:"12px", fontWeight:"600", color:"var(--text2)", wordBreak:"break-all"}}>{extractedData.fileName}</div>
-                  <div style={{fontSize:"11px", marginTop:"5px"}}>El archivo se usa para la extracción y no queda almacenado en la aplicación.</div>
+                  <div style={{fontSize:"11px", marginTop:"5px"}}>El archivo se guardará de forma segura en tu almacenamiento personal al confirmar.</div>
                 </div>
               </div>
 
+              {uploadingImport && <div style={{color:"var(--text2)", fontSize:"13px", marginTop:"10px"}}>⏳ Subiendo comprobante...</div>}
+              {uploadError && <div style={{color:"var(--pink)", fontSize:"13px", marginTop:"10px"}}>⚠️ {uploadError}</div>}
+
               <div style={{display:"flex", gap:"10px", marginTop:"20px"}}>
-                <button className="btn btn-p" onClick={confirmImport} style={{flex: 1}}>✅ Confirmar y Guardar en {extractedData.modulo}</button>
-                <button className="btn btn-d" onClick={() => setExtractedData(null)}>✖ Descartar</button>
+                <button className="btn btn-p" onClick={confirmImport} disabled={uploadingImport} style={{flex: 1}}>{uploadingImport ? '⏳ Guardando...' : `✅ Confirmar y Guardar en ${extractedData.modulo}`}</button>
+                <button className="btn btn-d" onClick={() => { setExtractedData(null); setUploadError(''); }}>✖ Descartar</button>
               </div>
             </div>
           )}
@@ -217,6 +245,7 @@ export default function Documentos() {
             <div className="fgrp"><label className="flbl">Monto Financiero ($)</label><input type="number" className="finp" id="man_mon" placeholder="150000" /></div>
             <div className="fgrp"><label className="flbl">Categoría</label><input type="text" className="finp" id="man_cat" placeholder="Operativa" /></div>
             <div className="fgrp"><label className="flbl">Fecha</label><input type="date" className="finp" id="man_fec" /></div>
+            <ComprobanteUploader modulo="documentos" value={manualComprobante} onChange={setManualComprobante} />
             <button className="btn btn-p" onClick={() => {
                const mod = document.getElementById('man_mod').value;
                const item = {
@@ -227,7 +256,8 @@ export default function Documentos() {
                  fecha: document.getElementById('man_fec').value || new Date().toISOString().split('T')[0],
                  notas: 'Doc: Ingresado Manualmente',
                  cuenta: 'Pendiente',
-                 fuente: 'Pendiente'
+                 fuente: 'Pendiente',
+                 comprobante: manualComprobante || null
                };
                if(mod === 'ingresos') setIngresos(prev => [item, ...prev]);
                if(mod === 'gastos') setGastos(prev => [item, ...prev]);
@@ -240,13 +270,15 @@ export default function Documentos() {
                  tasa: 0,
                  vencimiento: item.fecha,
                  progreso: 0,
-                 notas: item.notas
+                 notas: item.notas,
+                 comprobante: item.comprobante
                }, ...prev]);
                
                alert('Guardado exitosamente en ' + mod);
                document.getElementById('man_desc').value = '';
                document.getElementById('man_mon').value = '';
                document.getElementById('man_cat').value = '';
+               setManualComprobante(null);
             }}>Guardar Documento 💾</button>
           </div>
         </div>
@@ -265,6 +297,9 @@ export default function Documentos() {
                   <div style={{fontSize:"18px", fontWeight:"700", fontFamily:"var(--mono)", color: 'var(--text)'}}>${Number(i.monto ?? i.balance).toLocaleString()}</div>
                   <div style={{fontSize:"11px", color:"var(--text2)"}}>{i.fecha || i.vencimiento} • {i.cat || i.institucion}</div>
                   <div style={{background:"rgba(0,0,0,0.2)", padding:"4px", borderRadius:"4px", fontSize:"10px", color:"var(--text3)", wordBreak:"break-all"}}>{i.notas}</div>
+                  {i.comprobante?.url && (
+                    <a href={i.comprobante.url} target="_blank" rel="noopener noreferrer" style={{fontSize:"11px", color:"var(--blue)", textAlign:"center"}}>📎 Ver comprobante</a>
+                  )}
                 </div>
             ))}
             {[...ingresos, ...gastos, ...deudas].filter(i => i.notas && i.notas.includes('Doc:')).length === 0 && (
