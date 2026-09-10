@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useAppData } from '../context/AppDataContext';
 
+const getBalance = (debt) => Number(debt.balance ?? debt.monto) || 0;
+
 export default function Deudas() {
   const { deudas, setDeudas } = useAppData();
 
@@ -13,7 +15,7 @@ export default function Deudas() {
     vencimiento: ''
   });
 
-  const deudaTotal = deudas.reduce((sum, d) => sum + Number(d.balance), 0);
+  const deudaTotal = deudas.reduce((sum, d) => sum + getBalance(d), 0);
   const pagoMensualTotal = deudas.reduce((sum, d) => sum + Number(d.pagoMensual), 0);
   const tasaPromedio = deudas.length > 0 ? (deudas.reduce((sum, d) => sum + Number(d.tasa), 0) / deudas.length).toFixed(1) : 0;
   
@@ -36,8 +38,9 @@ export default function Deudas() {
   const handlePay = (id) => {
     setDeudas(deudas.map(d => {
       if (d.id === id) {
-        const newBalance = Math.max(0, Number(d.balance) - Number(d.pagoMensual));
-        const addedProgress = (Number(d.pagoMensual) / (Number(d.balance) || 1)) * 100;
+        const balance = getBalance(d);
+        const newBalance = Math.max(0, balance - Number(d.pagoMensual));
+        const addedProgress = (Number(d.pagoMensual) / (balance || 1)) * 100;
         return { ...d, balance: newBalance, progreso: Math.min(100, (Number(d.progreso) || 0) + addedProgress) };
       }
       return d;
@@ -106,15 +109,15 @@ export default function Deudas() {
             <div key={d.id} className="debt-card">
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"12px"}}>
                 <div>
-                  <div style={{fontSize:"14px",fontWeight:"700"}}>{s.icon} {d.nombre}</div>
-                  <div style={{fontSize:"12px",color:"var(--text2)"}}>{d.institucion}</div>
+                  <div style={{fontSize:"14px",fontWeight:"700"}}>{s.icon} {d.nombre || d.desc || 'Deuda sin nombre'}</div>
+                  <div style={{fontSize:"12px",color:"var(--text2)"}}>{d.institucion || d.cat || 'Sin institución'}</div>
                 </div>
                 <span className={`badge ${s.bg}`}>{d.tasa}% anual</span>
               </div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px",fontSize:"12.5px",marginBottom:"12px"}}>
                 <div>
                   <div style={{color:"var(--text3)",fontSize:"11px"}}>BALANCE</div>
-                  <div style={{fontFamily:"var(--mono)",color:s.color}}>${Number(d.balance).toLocaleString()}</div>
+                  <div style={{fontFamily:"var(--mono)",color:s.color}}>${getBalance(d).toLocaleString()}</div>
                 </div>
                 <div>
                   <div style={{color:"var(--text3)",fontSize:"11px"}}>PAGO/MES</div>
@@ -125,7 +128,7 @@ export default function Deudas() {
                 <div className="pf" style={{width:`${Math.min(100, d.progreso || 0)}%`,background:s.color}}></div>
               </div>
               <div style={{fontSize:"11px",color:"var(--text2)",marginBottom:"12px"}}>
-                {d.vencimiento ? `Vencimiento: ${d.vencimiento} · ` : ''}Interés anual aprox: ${(Number(d.balance)*Number(d.tasa)/100).toLocaleString()}
+                {d.vencimiento ? `Vencimiento: ${d.vencimiento} · ` : ''}Interés anual aprox: ${(getBalance(d)*Number(d.tasa)/100).toLocaleString()}
               </div>
               <div style={{display:"flex",gap:"8px"}}>
                 <button className="btn btn-o btn-sm" onClick={() => handlePay(d.id)}>Pagar Ahora</button>

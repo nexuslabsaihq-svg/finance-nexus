@@ -70,7 +70,7 @@ function App() {
       case 'inversiones': return <Inversiones />;
       case 'deudas': return <Deudas />;
       case 'estrategia': return <Estrategia />;
-      case 'fechas': return <Fechas />;
+      case 'fechas': return <Fechas period={period} />;
       case 'informes': return <Informes />;
       case 'ia': return <IA />;
       case 'perfil': return <Perfil />;

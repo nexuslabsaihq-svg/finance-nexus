@@ -99,7 +99,19 @@ export default function Documentos() {
     };
     if (extractedData.modulo === 'ingresos') setIngresos(prev => [item, ...prev]);
     if (extractedData.modulo === 'gastos') setGastos(prev => [item, ...prev]);
-    if (extractedData.modulo === 'deudas') setDeudas(prev => [item, ...prev]);
+    if (extractedData.modulo === 'deudas') {
+      setDeudas(prev => [{
+        id: item.id,
+        nombre: item.desc,
+        institucion: item.cat,
+        balance: Number(item.monto) || 0,
+        pagoMensual: 0,
+        tasa: 0,
+        vencimiento: item.fecha,
+        progreso: 0,
+        notas: item.notas
+      }, ...prev]);
+    }
     
     alert(`Importado con éxito en ${extractedData.modulo}`);
     setExtractedData(null);
@@ -110,14 +122,14 @@ export default function Documentos() {
       <div className="page-hdr">
         <div>
           <div className="page-title">📂 Documentos Inteligentes</div>
-          <div className="page-sub">Subida, análisis automático y almacenamiento visual</div>
+          <div className="page-sub">Análisis y registro de datos extraídos; los archivos no se almacenan.</div>
         </div>
       </div>
       
       <div className="tabs">
         <button className={`tab ${activeTab==='import'?'active':''}`} onClick={()=>setActiveTab('import')}>Carga IA</button>
         <button className={`tab ${activeTab==='manual'?'active':''}`} onClick={()=>setActiveTab('manual')}>Ingreso Manual</button>
-        <button className={`tab ${activeTab==='library'?'active':''}`} onClick={()=>setActiveTab('library')}>Biblioteca</button>
+        <button className={`tab ${activeTab==='library'?'active':''}`} onClick={()=>setActiveTab('library')}>Registros importados</button>
       </div>
 
       {activeTab === 'import' && (
@@ -136,7 +148,7 @@ export default function Documentos() {
             >
               <div style={{fontSize:"48px", marginBottom:"10px"}}>📥</div>
               <div style={{fontSize:"18px", fontWeight:"600", color:"var(--text)"}}>Arrastra un comprobante o factura aquí</div>
-              <div style={{fontSize:"13px", color:"var(--text3)", marginTop:"5px"}}>Soporta PDF, JPG, PNG (hasta 10MB)</div>
+              <div style={{fontSize:"13px", color:"var(--text3)", marginTop:"5px"}}>Selecciona un PDF, JPG o PNG para extraer sus datos.</div>
               <input ref={fileInputRef} type="file" style={{display:"none"}} accept="image/*,application/pdf" onChange={handleChange} />
             </div>
           )}
@@ -176,7 +188,7 @@ export default function Documentos() {
                 <div style={{width:"250px", background:"var(--surface)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", borderRadius:"12px", border:"1px dashed var(--border)", color:"var(--text3)", padding:"15px", textAlign:"center"}}>
                   <div style={{fontSize:"40px", marginBottom:"10px"}}>📄</div>
                   <div style={{fontSize:"12px", fontWeight:"600", color:"var(--text2)", wordBreak:"break-all"}}>{extractedData.fileName}</div>
-                  <div style={{fontSize:"11px", marginTop:"5px"}}>Vista previa de documento generada e indexada en Firestore</div>
+                  <div style={{fontSize:"11px", marginTop:"5px"}}>El archivo se usa para la extracción y no queda almacenado en la aplicación.</div>
                 </div>
               </div>
 
@@ -219,7 +231,17 @@ export default function Documentos() {
                };
                if(mod === 'ingresos') setIngresos(prev => [item, ...prev]);
                if(mod === 'gastos') setGastos(prev => [item, ...prev]);
-               if(mod === 'deudas') setDeudas(prev => [item, ...prev]);
+               if(mod === 'deudas') setDeudas(prev => [{
+                 id: item.id,
+                 nombre: item.desc,
+                 institucion: item.cat,
+                 balance: item.monto,
+                 pagoMensual: 0,
+                 tasa: 0,
+                 vencimiento: item.fecha,
+                 progreso: 0,
+                 notas: item.notas
+               }, ...prev]);
                
                alert('Guardado exitosamente en ' + mod);
                document.getElementById('man_desc').value = '';
@@ -232,21 +254,21 @@ export default function Documentos() {
 
       {activeTab === 'library' && (
         <div className="card" style={{ flex: 1, overflowY:"auto" }}>
-          <div className="card-hdr"><div className="card-title">📚 Biblioteca de Documentos</div></div>
+          <div className="card-hdr"><div className="card-title">📚 Registros importados</div></div>
           <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(200px, 1fr))", gap:"15px", marginTop:"15px"}}>
             {[...ingresos, ...gastos, ...deudas]
               .filter(i => i.notas && i.notas.includes('Doc:'))
               .map(i => (
                 <div key={i.id} style={{background:"var(--surface3)", border:"1px solid var(--border)", borderRadius:"12px", padding:"15px", display:"flex", flexDirection:"column", gap:"8px"}}>
                   <div style={{fontSize:"30px", textAlign:"center", marginBottom:"5px"}}>📄</div>
-                  <div style={{fontSize:"13px", fontWeight:"600", whiteSpace:"nowrap", textOverflow:"ellipsis", overflow:"hidden"}} title={i.desc}>{i.desc}</div>
-                  <div style={{fontSize:"18px", fontWeight:"700", fontFamily:"var(--mono)", color: i.monto > 0 ? 'var(--text)' : 'var(--text)'}}>${Number(i.monto).toLocaleString()}</div>
-                  <div style={{fontSize:"11px", color:"var(--text2)"}}>{i.fecha} • {i.cat}</div>
+                  <div style={{fontSize:"13px", fontWeight:"600", whiteSpace:"nowrap", textOverflow:"ellipsis", overflow:"hidden"}} title={i.desc || i.nombre}>{i.desc || i.nombre}</div>
+                  <div style={{fontSize:"18px", fontWeight:"700", fontFamily:"var(--mono)", color: 'var(--text)'}}>${Number(i.monto ?? i.balance).toLocaleString()}</div>
+                  <div style={{fontSize:"11px", color:"var(--text2)"}}>{i.fecha || i.vencimiento} • {i.cat || i.institucion}</div>
                   <div style={{background:"rgba(0,0,0,0.2)", padding:"4px", borderRadius:"4px", fontSize:"10px", color:"var(--text3)", wordBreak:"break-all"}}>{i.notas}</div>
                 </div>
             ))}
             {[...ingresos, ...gastos, ...deudas].filter(i => i.notas && i.notas.includes('Doc:')).length === 0 && (
-              <div style={{gridColumn:"1/-1", textAlign:"center", padding:"40px", color:"var(--text3)"}}>No hay documentos subidos. Arrastra uno en la pestaña de carga.</div>
+              <div style={{gridColumn:"1/-1", textAlign:"center", padding:"40px", color:"var(--text3)"}}>No hay registros importados. Carga un archivo para extraer y registrar sus datos.</div>
             )}
           </div>
         </div>

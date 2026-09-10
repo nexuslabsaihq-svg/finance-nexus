@@ -105,3 +105,13 @@ Se creó en la raíz del proyecto para soportar el enrutamiento de la SPA y cabe
   * `cf72d10` — *Create vercel.json with rewrites and headers*
 * **Estado de Git:** Rama `main` sincronizada 1:1 con `origin/main`, árbol de trabajo limpio (`working tree clean`).
 * **Seguridad de Credenciales:** Sin tokens ni secretos hardcodeados en el historial ni en `.git/config`.
+
+---
+
+## 🧭 7. Estabilización Phase 0
+
+La estabilización inicial elimina valores financieros de demostración para nuevos usuarios y hace que Dashboard, Flujo de Caja y Fechas de Pago utilicen el estado persistido. El selector de mes cubre los doce meses de 2025.
+
+Los vencimientos se derivan exclusivamente de deudas con `vencimiento`; no existe un sistema de recordatorios generales. La vista de documentos registra datos extraídos, pero no almacena archivos, y la vista de seguridad no implementa gestión de contraseñas, 2FA, sesiones, exportación ni eliminación de cuenta.
+
+Las políticas de Firestore, tenencia/colaboradores, Firebase Authentication, Storage, Gemini, precios, facturación y comportamiento legal/comercial quedan fuera de esta fase.
