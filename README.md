@@ -24,9 +24,17 @@
 
 ### 🛡️ 3. Seguridad, Privacidad y Colaboración
 * **Modo Anti-Mirones (Anti-Shoulder Surfing):** Difuminado instantáneo de todos los saldos y cifras sensibles con un solo clic.
-* **LockScreen por Inactividad & Hard Logout:** Bloqueo de sesión ante inactividad prolongada y limpieza estricta de memoria local y credenciales.
+* **LockScreen por Inactividad & Hard Logout:** Bloqueo de sesión ante inactividad prolongada (1 hora) y limpieza estricta de memoria local y credenciales.
 * **Auditoría de Sesiones:** Registro de dispositivos, ubicaciones y control de accesos.
 * **Espacios Colaborativos:** Gestión de cuentas compartidas con roles asignables (Propietario, Editor, Solo Lectura).
+* **Reglas de Seguridad Estrictas:**
+  * **Cloud Firestore (`firestore.rules`):** Control de acceso por `activeUid`, validación de esquemas de datos y separación de permisos de lectura y escritura.
+  * **Firebase Storage (`storage.rules`):** Acceso exclusivo a usuarios autenticados, subidas confinadas a `/users/{uid}/comprobantes/{modulo}/{archivo}`, tipos permitidos estrictos (`image/jpeg`, `image/png`, `image/webp`, `application/pdf`) y límite de tamaño de 10MB.
+
+### 🧭 4. Experiencia de Usuario & Onboarding
+* **Tour Interactivo Guiado:** Recorrido inmersivo para nuevos usuarios con `react-joyride` personalizado, respetando el sistema de diseño corporativo.
+* **Control en Configuración:** Posibilidad de reactivar o desactivar el tour de bienvenida en cualquier momento desde *Configuración ➔ Experiencia Global*.
+* **Gestor de Categorías Dividido:** Interfaz clara y separada para categorías de Ingresos y Gastos.
 
 ---
 
@@ -37,11 +45,21 @@
 | **Frontend Core** | React | 19.x |
 | **Bundler & Tooling** | Vite con `@vitejs/plugin-react` | 8.x |
 | **Base de Datos & Auth** | Firebase (Auth + Cloud Firestore) | 12.x |
+| **Almacenamiento Seguro** | Firebase Cloud Storage | 12.x |
 | **Inteligencia Artificial** | `@google/generative-ai` (Gemini Flash / Pro) | 0.24.x |
 | **Visualización de Datos** | Recharts | 2.x |
 | **Tour Interactivo** | React-Joyride | 2.x |
 | **Exportación** | jsPDF, XLSX | Últimas estables |
 | **Estilos** | CSS3 nativo con variables dinámicas (Glassmorphism) | — |
+
+---
+
+## 🌐 Despliegue en Producción (Vercel)
+
+El proyecto cuenta con despliegue continuo (CI/CD) conectado a la rama `main` en [Vercel](https://vercel.com):
+
+* **URL Oficial de Producción:** [https://finance-nexus.vercel.app](https://finance-nexus.vercel.app)
+* **Configuración SPA (`vercel.json`):** Reescrituras para enrutamiento interno de cliente y cabeceras de seguridad HTTP (`X-Content-Type-Options`, `X-Frame-Options`, `X-XSS-Protection`, `Referrer-Policy`).
 
 ---
 
@@ -101,12 +119,13 @@ finance-nexus/
 │   ├── assets/                # Imágenes y recursos del frontend
 │   ├── components/            # Componentes reutilizables (Sidebar, Header, LockScreen, TourGuide, etc.)
 │   ├── context/               # AppDataContext (Sincronización en tiempo real con Firestore)
-│   ├── firebase/              # Inicialización de Firebase Auth y Firestore
+│   ├── firebase/              # Inicialización de Firebase Auth, Firestore y Storage
 │   ├── pages/                 # Vistas principales (Dashboard, Ingresos, Gastos, Deudas, IA, etc.)
 │   ├── App.jsx                # Enrutador y control de sesión
 │   ├── index.css              # Sistema de diseño, temas (Light/Dark) y Glassmorphism
 │   └── main.jsx               # Punto de entrada de la aplicación
 ├── firestore.rules            # Reglas de seguridad de Cloud Firestore
+├── storage.rules              # Reglas de seguridad de Cloud Storage (comprobantes max 10MB)
 ├── vercel.json                # Configuración de despliegue y cabeceras de seguridad
 ├── package.json
 └── README.md
