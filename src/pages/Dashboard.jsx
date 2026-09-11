@@ -3,6 +3,9 @@ import { useAppData } from '../context/AppDataContext';
 import { GeminaKey } from '../firebase/config';
 import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
 import { getPeriodPrefix, getPreviousPeriodPrefixes, PERIOD_YEAR } from '../utils/period';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+
+const COLORS = ['#FF9A76', '#E85D75', '#7ED321', '#6B7FD6', '#A855F7', '#FBBF24', '#38BDF8'];
 
 const toAmount = (value) => {
   const amount = Number(value);
@@ -86,7 +89,7 @@ export default function Dashboard({ period }) {
       gastos: filterByPeriod(gastos, monthPrefix).reduce((sum, item) => sum + toAmount(item.monto), 0),
     })),
     [period, ingresos, gastos],
-  );
+  ).reverse(); // Invertimos para que el gráfico vaya de más antiguo a más reciente (izquierda a derecha)
 
   const gastosPorCategoria = useMemo(() => {
     const totals = gastosMes.reduce((categories, gasto) => {
@@ -95,9 +98,8 @@ export default function Dashboard({ period }) {
       return categories;
     }, {});
     return Object.entries(totals)
-      .map(([category, amount]) => ({ category, amount }))
-      .sort((a, b) => b.amount - a.amount)
-      .slice(0, 4);
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
   }, [gastosMes]);
 
   const vencimientos = useMemo(
@@ -108,9 +110,12 @@ export default function Dashboard({ period }) {
     [deudas],
   );
   const today = new Date().toISOString().slice(0, 10);
-  const recentTransactions = [...ingresos.map((item) => ({ ...item, type: 'Ingreso' })), ...gastos.map((item) => ({ ...item, type: 'Gasto' }))]
+  
+  // Agregar IDs artificiales para la key del map y evitar warnings
+  const recentTransactions = [...ingresos.map((item, idx) => ({ ...item, type: 'Ingreso', uniqueId: `ing-${idx}` })), ...gastos.map((item, idx) => ({ ...item, type: 'Gasto', uniqueId: `gas-${idx}` }))]
     .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
     .slice(0, 6);
+    
   const distribution = [
     { label: 'Inversiones', amount: totalInv, color: 'var(--green)' },
     { label: 'Bancos', amount: totalBancos, color: 'var(--orange)' },
@@ -181,18 +186,50 @@ export default function Dashboard({ period }) {
           <div className="card card-glow-o">
             <div className="card-hdr"><div><div className="card-title">📈 Movimientos mensuales</div><div className="card-sub">Los seis meses hasta {period} {PERIOD_YEAR}</div></div></div>
             {monthlyHistory.every((month) => month.ingresos === 0 && month.gastos === 0) ? <EmptyState message="No hay movimientos registrados en estos seis meses." /> : (
-              <div className="tw"><table>
-                <thead><tr><th>Mes</th><th className="r">Ingresos</th><th className="r">Gastos</th><th className="r">Flujo neto</th></tr></thead>
-                <tbody>{monthlyHistory.map((month) => <tr key={month.prefix}><td className="tdp">{month.label}</td><td className="tdr pos">{formatCurrency(month.ingresos)}</td><td className="tdr neg">{formatCurrency(month.gastos)}</td><td className={`tdr ${month.ingresos - month.gastos >= 0 ? 'pos' : 'neg'}`}>{formatCurrency(month.ingresos - month.gastos)}</td></tr>)}</tbody>
-              </table></div>
+              <div style={{ height: '220px', width: '100%', marginTop: '10px' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={monthlyHistory} margin={{ top: 5, right: 10, bottom: 5, left: 10 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                    <XAxis dataKey="label" stroke="var(--text2)" tick={{ fontSize: 11 }} />
+                    <YAxis stroke="var(--text2)" tick={{ fontSize: 11 }} tickFormatter={(val) => `$${(val/1000)}k`} width={50} />
+                    <RechartsTooltip 
+                      contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px' }}
+                      formatter={(value) => formatCurrency(value)}
+                    />
+                    <Legend wrapperStyle={{ fontSize: '12px' }} />
+                    <Line type="monotone" dataKey="ingresos" name="Ingresos" stroke="var(--green)" strokeWidth={3} dot={{r:3}} activeDot={{r:5}} />
+                    <Line type="monotone" dataKey="gastos" name="Gastos" stroke="var(--pink)" strokeWidth={3} dot={{r:3}} activeDot={{r:5}} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
             )}
           </div>
 
           <div className="card">
             <div className="card-hdr"><div className="card-title">🍩 Gastos por categoría</div><div className="card-sub">{period} {PERIOD_YEAR}</div></div>
             {gastosPorCategoria.length === 0 ? <EmptyState message="No hay gastos categorizados para este período." /> : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {gastosPorCategoria.map((item, index) => <CategoryRow key={item.category} {...item} total={totalGastos} color={['var(--orange)', 'var(--pink)', 'var(--green)', 'var(--blue)'][index]} />)}
+              <div style={{ height: '220px', width: '100%', marginTop: '10px' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={gastosPorCategoria}
+                      innerRadius={50}
+                      outerRadius={80}
+                      paddingAngle={3}
+                      dataKey="value"
+                      stroke="none"
+                    >
+                      {gastosPorCategoria.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <RechartsTooltip 
+                      formatter={(value) => formatCurrency(value)}
+                      contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px' }}
+                    />
+                    <Legend layout="horizontal" verticalAlign="bottom" align="center" wrapperStyle={{fontSize:'11px'}} />
+                  </PieChart>
+                </ResponsiveContainer>
               </div>
             )}
           </div>
@@ -241,7 +278,7 @@ export default function Dashboard({ period }) {
         <div className="tw"><table>
           <thead><tr><th>Descripción</th><th>Tipo</th><th>Categoría</th><th className="r">Monto</th><th>Fecha</th><th>Cuenta</th></tr></thead>
           <tbody>{recentTransactions.length === 0 ? <tr><td colSpan="6" style={{ textAlign: 'center', padding: '20px', color: 'var(--text2)' }}>No hay transacciones registradas todavía.</td></tr> : recentTransactions.map((transaction) => (
-            <tr key={`${transaction.type}-${transaction.id}`}><td className="tdp">{transaction.type === 'Ingreso' ? '💰' : '🛒'} {transaction.desc}</td><td><span className={`badge ${transaction.type === 'Ingreso' ? 'bg' : 'bp'}`}>{transaction.type}</span></td><td>{transaction.cat}</td><td className={`tdr ${transaction.type === 'Ingreso' ? 'pos' : 'neg'}`}>{transaction.type === 'Ingreso' ? '+' : '-'}{formatCurrency(transaction.monto)}</td><td className="tdm" style={{ fontSize: '11.5px', color: 'var(--text2)' }}>{transaction.fecha}</td><td>{transaction.fuente || transaction.cuenta || 'Sin cuenta'}</td></tr>
+            <tr key={transaction.uniqueId}><td className="tdp">{transaction.type === 'Ingreso' ? '💰' : '🛒'} {transaction.desc}</td><td><span className={`badge ${transaction.type === 'Ingreso' ? 'bg' : 'bp'}`}>{transaction.type}</span></td><td>{transaction.cat}</td><td className={`tdr ${transaction.type === 'Ingreso' ? 'pos' : 'neg'}`}>{transaction.type === 'Ingreso' ? '+' : '-'}{formatCurrency(transaction.monto)}</td><td className="tdm" style={{ fontSize: '11.5px', color: 'var(--text2)' }}>{transaction.fecha}</td><td>{transaction.fuente || transaction.cuenta || 'Sin cuenta'}</td></tr>
           ))}</tbody>
         </table></div>
       </div>
