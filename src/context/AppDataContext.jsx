@@ -170,12 +170,22 @@ export const AppDataProvider = ({ children }) => {
 
   const logout = async () => {
     try {
+      // 1. Cerrar sesión en Firebase Auth
       await signOut(auth);
-      // [AUDITORÍA DE SEGURIDAD]: Purga total del heap de JS.
-      // Destruimos la instancia de la aplicación forzando una recarga limpia.
-      window.localStorage.removeItem('fn_active_workspace_');
-      window.location.href = '/'; 
-    } catch(e) { console.error(e); }
+      
+      // 2. Limpiar localStorage completamente
+      window.localStorage.clear();
+      
+      // 3. Limpiar sessionStorage
+      window.sessionStorage.clear();
+      
+      // 4. Forzar recarga limpia (esto resetea todos los estados de React)
+      window.location.href = '/';
+    } catch(e) {
+      console.error('[Finance Nexus] Error en logout:', e);
+      // Si falla, igual recargar para limpiar estados
+      window.location.href = '/';
+    }
   };
 
   // ============================================================

@@ -46,9 +46,96 @@ service cloud.firestore {
     // Los colaboradores activos ('editor'/'viewer') pueden leer;
     // solo los colaboradores con rol 'editor' pueden escribir.
     // ============================================================
-    match /users/{userId}/appData/{module} {
+    // Colecciones permitidas (whitelist)
+    match /users/{userId}/appData/fn_ingresos {
       allow read: if isOwner(userId) || isActiveCollaborator(userId);
-      allow write: if isOwner(userId) || isActiveEditor(userId);
+      allow write: if (isOwner(userId) || isActiveEditor(userId))
+                    && request.resource.data.keys().hasOnly(['data'])
+                    && request.resource.data.data is list;
+    }
+
+    match /users/{userId}/appData/fn_gastos {
+      allow read: if isOwner(userId) || isActiveCollaborator(userId);
+      allow write: if (isOwner(userId) || isActiveEditor(userId))
+                    && request.resource.data.keys().hasOnly(['data'])
+                    && request.resource.data.data is list;
+    }
+
+    match /users/{userId}/appData/fn_transferencias {
+      allow read: if isOwner(userId) || isActiveCollaborator(userId);
+      allow write: if (isOwner(userId) || isActiveEditor(userId))
+                    && request.resource.data.keys().hasOnly(['data'])
+                    && request.resource.data.data is list;
+    }
+
+    match /users/{userId}/appData/fn_bancos {
+      allow read: if isOwner(userId) || isActiveCollaborator(userId);
+      allow write: if (isOwner(userId) || isActiveEditor(userId))
+                    && request.resource.data.keys().hasOnly(['data'])
+                    && request.resource.data.data is list;
+    }
+
+    match /users/{userId}/appData/fn_ahorros {
+      allow read: if isOwner(userId) || isActiveCollaborator(userId);
+      allow write: if (isOwner(userId) || isActiveEditor(userId))
+                    && request.resource.data.keys().hasOnly(['data'])
+                    && request.resource.data.data is list;
+    }
+
+    match /users/{userId}/appData/fn_inversiones {
+      allow read: if isOwner(userId) || isActiveCollaborator(userId);
+      allow write: if (isOwner(userId) || isActiveEditor(userId))
+                    && request.resource.data.keys().hasOnly(['data'])
+                    && request.resource.data.data is list;
+    }
+
+    match /users/{userId}/appData/fn_deudas {
+      allow read: if isOwner(userId) || isActiveCollaborator(userId);
+      allow write: if (isOwner(userId) || isActiveEditor(userId))
+                    && request.resource.data.keys().hasOnly(['data'])
+                    && request.resource.data.data is list;
+    }
+
+    match /users/{userId}/appData/fn_presupuestos {
+      allow read: if isOwner(userId) || isActiveCollaborator(userId);
+      allow write: if (isOwner(userId) || isActiveEditor(userId))
+                    && request.resource.data.keys().hasOnly(['data'])
+                    && request.resource.data.data is list;
+    }
+
+    match /users/{userId}/appData/fn_chatsIA {
+      allow read: if isOwner(userId) || isActiveCollaborator(userId);
+      allow write: if (isOwner(userId) || isActiveEditor(userId))
+                    && request.resource.data.keys().hasOnly(['data'])
+                    && request.resource.data.data is list;
+    }
+
+    match /users/{userId}/appData/fn_notifs {
+      allow read: if isOwner(userId) || isActiveCollaborator(userId);
+      allow write: if (isOwner(userId) || isActiveEditor(userId))
+                    && request.resource.data.keys().hasOnly(['data'])
+                    && request.resource.data.data is list;
+    }
+
+    match /users/{userId}/appData/fn_config {
+      allow read: if isOwner(userId) || isActiveCollaborator(userId);
+      allow write: if (isOwner(userId) || isActiveEditor(userId))
+                    && request.resource.data.keys().hasOnly(['data'])
+                    && request.resource.data.data is map;
+    }
+
+    match /users/{userId}/appData/fn_sesiones {
+      allow read: if isOwner(userId) || isActiveCollaborator(userId);
+      allow write: if (isOwner(userId) || isActiveEditor(userId))
+                    && request.resource.data.keys().hasOnly(['data'])
+                    && request.resource.data.data is list;
+    }
+
+    match /users/{userId}/appData/fn_usuario {
+      allow read: if isOwner(userId) || isActiveCollaborator(userId);
+      allow write: if (isOwner(userId) || isActiveEditor(userId))
+                    && request.resource.data.keys().hasOnly(['data'])
+                    && request.resource.data.data is map;
     }
 
     // ============================================================

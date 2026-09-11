@@ -26,6 +26,8 @@ import ConfigSetup from './pages/ConfigSetup';
 
 import { useAppData } from './context/AppDataContext';
 import TourGuide from './components/TourGuide';
+import AuthGuard from './components/AuthGuard';
+import LockScreen from './components/LockScreen';
 
 const Bubbles = () => (
   <div className="bubbles">
@@ -35,7 +37,7 @@ const Bubbles = () => (
 );
 
 function App() {
-  const { activePage, period, setActivePage, authLoading, authUser, loginWithGoogle, authError } = useAppData();
+  const { activePage, period, setActivePage, authUser, loginWithGoogle, authError } = useAppData();
   const [hash, setHash] = useState(window.location.hash);
 
   useEffect(() => {
@@ -44,18 +46,10 @@ function App() {
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
 
-
-  if (authLoading) {
-    return (
-      <div style={{minHeight:"100vh", background:"var(--bg)", display:"flex", alignItems:"center", justifyContent:"center"}}>
-        <div style={{color:"var(--text2)"}}>Cargando Finance Nexus...</div>
-      </div>
-    );
-  }
-
   const isAppView = hash === '#app';
 
-  if (!isAppView || !authUser) {
+  // Si no estamos en la vista de la app, mostramos la Landing Page
+  if (!isAppView) {
     return <Landing onLogin={loginWithGoogle} authUser={authUser} authError={authError} />;
   }
 
@@ -83,21 +77,23 @@ function App() {
   };
 
   return (
-    <>
-      <TourGuide />
-      <Bubbles />
-      <div className="app">
-        <div className="sidebar-overlay" onClick={() => document.body.classList.remove('sidebar-open')}></div>
-        <Sidebar />
-        <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100vh', overflow: 'hidden' }}>
-          <Header />
-          <main className="main" style={{ flex: 1, overflowY: 'auto' }}>
-            {renderPage()}
-          </main>
+    <AuthGuard>
+      <LockScreen>
+        <TourGuide />
+        <Bubbles />
+        <div className="app">
+          <div className="sidebar-overlay" onClick={() => document.body.classList.remove('sidebar-open')}></div>
+          <Sidebar />
+          <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100vh', overflow: 'hidden' }}>
+            <Header />
+            <main className="main" style={{ flex: 1, overflowY: 'auto' }}>
+              {renderPage()}
+            </main>
+          </div>
         </div>
-      </div>
-      <button className="float-chat" onClick={() => setActivePage('ia')}>🤖</button>
-    </>
+        <button className="float-chat" onClick={() => setActivePage('ia')}>🤖</button>
+      </LockScreen>
+    </AuthGuard>
   );
 }
 
