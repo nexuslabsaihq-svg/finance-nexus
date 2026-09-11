@@ -2,8 +2,8 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useAppData } from '../context/AppDataContext';
 
 // Tiempo de inactividad antes de bloquear (en milisegundos)
-// 5 minutos = 300000 ms, 10 minutos = 600000 ms
-const INACTIVITY_TIMEOUT = 300000; // 5 minutos
+// 1 hora = 3600000 ms
+const INACTIVITY_TIMEOUT = 3600000; 
 
 export default function LockScreen({ children }) {
   const { logout, authUser } = useAppData();
@@ -20,19 +20,22 @@ export default function LockScreen({ children }) {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     if (warningTimeoutRef.current) clearTimeout(warningTimeoutRef.current);
 
-    // Mostrar advertencia 30 segundos antes del bloqueo
+    // [CORRECCIÓN]: Ocultar el banner de advertencia si el usuario vuelve a mover el mouse
+    setShowWarning(false);
+
+    // Mostrar advertencia 5 minutos antes del bloqueo (a los 55 minutos)
     warningTimeoutRef.current = setTimeout(() => {
       setShowWarning(true);
-    }, INACTIVITY_TIMEOUT - 30000); // 30 segundos antes
+    }, INACTIVITY_TIMEOUT - 300000); 
 
-    // Bloquear después del tiempo de inactividad
+    // Bloquear después del tiempo de inactividad (1 hora)
     timeoutRef.current = setTimeout(() => {
       setIsLocked(true);
       setShowWarning(false);
-      // Ejecutar Hard Logout después de 5 segundos de bloqueo
+      // Ejecutar Hard Logout después de 30 segundos de bloqueo en lugar de 5
       setTimeout(async () => {
         await logout();
-      }, 5000);
+      }, 30000);
     }, INACTIVITY_TIMEOUT);
   }, [authUser, isLocked, logout]);
 
