@@ -186,19 +186,25 @@ export default function Dashboard({ period }) {
           <div className="card card-glow-o">
             <div className="card-hdr"><div><div className="card-title">📈 Movimientos mensuales</div><div className="card-sub">Los seis meses hasta {period} {PERIOD_YEAR}</div></div></div>
             {monthlyHistory.every((month) => month.ingresos === 0 && month.gastos === 0) ? <EmptyState message="No hay movimientos registrados en estos seis meses." /> : (
-              <div style={{ height: '220px', width: '100%', marginTop: '10px' }}>
+              <div style={{ height: '260px', width: '100%', marginTop: '10px' }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={monthlyHistory} margin={{ top: 5, right: 10, bottom: 5, left: 10 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                    <XAxis dataKey="label" stroke="var(--text2)" tick={{ fontSize: 11 }} />
-                    <YAxis stroke="var(--text2)" tick={{ fontSize: 11 }} tickFormatter={(val) => `$${(val/1000)}k`} width={50} />
-                    <RechartsTooltip 
-                      contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px' }}
-                      formatter={(value) => formatCurrency(value)}
+                  <LineChart data={monthlyHistory} margin={{ top: 10, right: 20, bottom: 5, left: 15 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
+                    <XAxis dataKey="label" stroke="var(--text2)" tick={{ fontSize: 13, fill: 'var(--text2)' }} dy={10} />
+                    <YAxis 
+                      stroke="var(--text2)" 
+                      tick={{ fontSize: 13, fill: 'var(--text2)' }} 
+                      tickFormatter={(val) => `$${Math.round(val).toLocaleString('es-CL')}`} 
+                      width={80} 
                     />
-                    <Legend wrapperStyle={{ fontSize: '12px' }} />
-                    <Line type="monotone" dataKey="ingresos" name="Ingresos" stroke="var(--green)" strokeWidth={3} dot={{r:3}} activeDot={{r:5}} />
-                    <Line type="monotone" dataKey="gastos" name="Gastos" stroke="var(--pink)" strokeWidth={3} dot={{r:3}} activeDot={{r:5}} />
+                    <RechartsTooltip 
+                      contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text)' }}
+                      formatter={(value) => [`$${Math.round(value).toLocaleString('es-CL')}`, undefined]}
+                      labelStyle={{ color: 'var(--text2)', fontWeight: 'bold', marginBottom: '5px' }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: '13px', paddingTop: '10px' }} />
+                    <Line type="monotone" dataKey="ingresos" name="Ingresos" stroke="var(--green)" strokeWidth={4} dot={{r:4, fill: 'var(--green)'}} activeDot={{r:6}} />
+                    <Line type="monotone" dataKey="gastos" name="Gastos" stroke="var(--pink)" strokeWidth={4} dot={{r:4, fill: 'var(--pink)'}} activeDot={{r:6}} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -208,26 +214,28 @@ export default function Dashboard({ period }) {
           <div className="card">
             <div className="card-hdr"><div className="card-title">🍩 Gastos por categoría</div><div className="card-sub">{period} {PERIOD_YEAR}</div></div>
             {gastosPorCategoria.length === 0 ? <EmptyState message="No hay gastos categorizados para este período." /> : (
-              <div style={{ height: '220px', width: '100%', marginTop: '10px' }}>
+              <div style={{ height: '260px', width: '100%', marginTop: '10px' }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
+                  <PieChart margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
                     <Pie
                       data={gastosPorCategoria}
-                      innerRadius={50}
-                      outerRadius={80}
-                      paddingAngle={3}
+                      innerRadius={60}
+                      outerRadius={90}
+                      paddingAngle={4}
                       dataKey="value"
                       stroke="none"
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      labelLine={{ stroke: 'var(--text3)', strokeWidth: 1 }}
                     >
                       {gastosPorCategoria.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
                     <RechartsTooltip 
-                      formatter={(value) => formatCurrency(value)}
-                      contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px' }}
+                      formatter={(value) => [`$${Math.round(value).toLocaleString('es-CL')}`, undefined]}
+                      contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text)' }}
+                      itemStyle={{ fontWeight: 'bold' }}
                     />
-                    <Legend layout="horizontal" verticalAlign="bottom" align="center" wrapperStyle={{fontSize:'11px'}} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>

@@ -4,6 +4,9 @@ import { formatMiles, parseMiles } from '../utils/chileData';
 import * as XLSX from 'xlsx';
 import ComprobanteUploader from '../components/ComprobanteUploader';
 import { deleteComprobante } from '../firebase/storage';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
+
+const COLORS = ['#34D399', '#60A5FA', '#A78BFA', '#FBBF24', '#F472B6', '#38BDF8'];
 
 export default function Ingresos() {
   const { ingresos, setIngresos, bancos, configuracion } = useAppData();
@@ -33,6 +36,16 @@ export default function Ingresos() {
   const total = ingresos.reduce((s, i) => s + Number(i.monto), 0);
   const max = Math.max(...ingresos.map(i => Number(i.monto)), 0);
   const promed = ingresos.length > 0 ? (total / ingresos.length) : 0;
+
+  const ingresosPorCat = useMemo(() => {
+    const totals = ingresos.reduce((acc, i) => {
+      acc[i.cat] = (acc[i.cat] || 0) + Number(i.monto);
+      return acc;
+    }, {});
+    return Object.entries(totals)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
+  }, [ingresos]);
 
   const handleCreate = () => {
     if(!form.desc || !form.monto) return;
@@ -116,6 +129,39 @@ export default function Ingresos() {
       </div>
       
       <div className="g2">
+        <div className="card">
+          <div className="card-hdr"><div className="card-title">🍩 Desglose por Categoría</div></div>
+          {ingresosPorCat.length === 0 ? (
+            <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text2)' }}>No hay ingresos para analizar.</div>
+          ) : (
+            <div style={{ height: '300px', width: '100%', marginTop: '10px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
+                  <Pie
+                    data={ingresosPorCat}
+                    innerRadius={70}
+                    outerRadius={100}
+                    paddingAngle={4}
+                    dataKey="value"
+                    stroke="none"
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    labelLine={{ stroke: 'var(--text3)', strokeWidth: 1 }}
+                  >
+                    {ingresosPorCat.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip 
+                    formatter={(value) => [`$${Math.round(value).toLocaleString('es-CL')}`, undefined]}
+                    contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text)' }}
+                    itemStyle={{ fontWeight: 'bold' }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+
         <div className="card"><div className="card-hdr"><div className="card-title">➕ Registrar Ingreso</div></div>
           <div className="fg fg2">
             <div className="fgrp"><label className="flbl">Descripción</label><input className="finp" placeholder="Ej: Sueldo, Venta..." value={form.desc} onChange={e=>setForm({...form, desc:(e.target.value)})}/></div>
