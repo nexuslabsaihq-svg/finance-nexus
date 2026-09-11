@@ -1,62 +1,102 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useAppData } from '../context/AppDataContext';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend } from 'recharts';
 
 export default function Estrategia() {
   const { deudas } = useAppData();
   const [estrategiaActiva, setEstrategiaActiva] = useState('nieve');
 
-  const deudaTotal = deudas.reduce((sum, d) => sum + Number(d.balance), 0);
-  const interesAnual = deudas.reduce((sum, d) => sum + (Number(d.balance) * Number(d.tasa) / 100), 0);
-
-  const sortedDeudas = [...deudas].sort((a, b) => {
-    if (estrategiaActiva === 'nieve') {
-      return Number(a.balance) - Number(b.balance);
-    } else {
-      return Number(b.tasa) - Number(a.tasa);
-    }
-  });
-
-  const getRankBadge = (idx, total) => {
+  const getRankBadge = (idx) => {
     if (idx === 0) return { bg: 'bg', text: 'Objetivo #1' };
     if (idx === 1) return { bg: 'bo', text: 'Objetivo #2' };
     return { bg: 'bb', text: `Objetivo #${idx + 1}` };
   };
 
   const calculatePayoff = (debts, isAvalanche) => {
-    // Clone debts to avoid mutating state
     let d = debts.map(x => ({ 
       ...x, 
       bal: Number(x.balance), 
       rate: Number(x.tasa)/100/12, 
-      min: Number(x.pagoMensual) 
+      min: Number(x.pagoMensual) || (Number(x.balance) * 0.05),
+      months: 0,
+      interestPaid: 0,
+      active: true
     }));
     
-    // Sort logic
+    // Sort logic for targeting
     d.sort((a, b) => isAvalanche ? (b.rate - a.rate) : (a.bal - b.bal));
     
     let totalInterest = 0;
-    d = d.map(debt => {
-      let m = 0;
-      let bal = debt.bal;
-      let interest = 0;
-      let monthly = debt.min || (bal * 0.05); // Fallback to 5% if 0
-      
-      // Safety break at 360 months (30 years)
-      while(bal > 0 && m < 360) {
-        let charge = bal * debt.rate;
-        interest += charge;
-        bal = bal + charge - monthly;
-        m++;
-      }
-      totalInterest += interest;
-      return { ...debt, months: m, interestPaid: interest };
-    });
+    let m = 0;
+    let totalBal = d.reduce((s, x) => s + x.bal, 0);
+    const balanceHistory = [{ mes: 0, balance: totalBal }];
+    const totalExtra = 0; // Se podría añadir pago extra en el futuro
     
-    return { list: d, interest: totalInterest };
+    while(totalBal > 0 && m < 360) {
+      m++;
+      let freedUpCash = totalExtra;
+      
+      // Calculate interest and minimums
+      for (let i = 0; i < d.length; i++) {
+        if (!d[i].active) {
+          freedUpCash += d[i].min;
+          continue;
+        }
+        const charge = d[i].bal * d[i].rate;
+        d[i].interestPaid += charge;
+        totalInterest += charge;
+        d[i].bal += charge;
+        d[i].months = m;
+      }
+      
+      // Pay minimums and target
+      for (let i = 0; i < d.length; i++) {
+        if (!d[i].active) continue;
+        
+        let payment = d[i].min;
+        if (i === d.findIndex(x => x.active)) {
+          payment += freedUpCash;
+        }
+        
+        if (d[i].bal <= payment) {
+          freedUpCash += (payment - d[i].bal);
+          d[i].bal = 0;
+          d[i].active = false;
+        } else {
+          d[i].bal -= payment;
+        }
+      }
+      
+      totalBal = d.reduce((s, x) => s + x.bal, 0);
+      if (m % 3 === 0 || totalBal === 0) { // Registrar cada 3 meses para no saturar el gráfico
+        balanceHistory.push({ mes: m, balance: Math.max(0, totalBal) });
+      }
+    }
+    
+    return { list: d, interest: totalInterest, history: balanceHistory, totalMonths: m };
   };
 
-  const snowball = calculatePayoff(deudas, false);
-  const avalanche = calculatePayoff(deudas, true);
+  const { snowball, avalanche, chartData } = useMemo(() => {
+    if (deudas.length === 0) return { snowball: {list:[], interest:0, history:[]}, avalanche: {list:[], interest:0, history:[]}, chartData: [] };
+    const sb = calculatePayoff(deudas, false);
+    const av = calculatePayoff(deudas, true);
+    
+    // Unir historiales para el gráfico
+    const maxMonths = Math.max(sb.totalMonths, av.totalMonths);
+    const data = [];
+    for(let i = 0; i <= maxMonths; i+=3) {
+      const sPoint = sb.history.find(h => h.mes === i) || sb.history[sb.history.length-1];
+      const aPoint = av.history.find(h => h.mes === i) || av.history[av.history.length-1];
+      data.push({
+        mes: `Mes ${i}`,
+        nieve: sPoint ? sPoint.balance : 0,
+        avalancha: aPoint ? aPoint.balance : 0
+      });
+      if (sPoint?.balance === 0 && aPoint?.balance === 0) break;
+    }
+    
+    return { snowball: sb, avalanche: av, chartData: data };
+  }, [deudas]);
   
   const activePlan = estrategiaActiva === 'nieve' ? snowball : avalanche;
 
@@ -81,6 +121,41 @@ export default function Estrategia() {
           <div style={{marginTop:'10px', fontSize:'12px'}}>Intereses proyectados: <strong style={{color:'var(--pink)'}}>${Math.round(avalanche.interest).toLocaleString()}</strong></div>
         </div>
       </div>
+
+      {chartData.length > 0 && (
+        <div className="card" style={{marginTop: '20px'}}>
+          <div className="card-hdr">
+            <div><div className="card-title">📉 Proyección de Amortización</div><div className="card-sub">Bola de Nieve vs Avalancha</div></div>
+          </div>
+          <div style={{height:'350px', width:'100%', padding:'10px 0'}}>
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorNieve" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--orange)" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="var(--orange)" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="colorAvalancha" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--blue)" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="var(--blue)" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="4 4" stroke="var(--border)" vertical={false} />
+                <XAxis dataKey="mes" stroke="var(--text2)" axisLine={false} tickLine={false} tick={{fontSize: 12}} dy={10} />
+                <YAxis stroke="var(--text2)" axisLine={false} tickLine={false} tick={{fontSize: 12}} tickFormatter={(val) => `$${(val/1000)}k`} />
+                <RechartsTooltip 
+                  contentStyle={{background:'var(--surface)', border:'1px solid var(--border)', borderRadius:'12px', boxShadow: '0 8px 30px rgba(0,0,0,0.12)', padding: '12px'}}
+                  formatter={(value, name) => [<span style={{fontWeight: 700, fontFamily: 'var(--mono)'}}>${Math.round(value).toLocaleString('es-CL')}</span>, name === 'nieve' ? 'Bola de Nieve' : 'Avalancha']}
+                  labelStyle={{ color: 'var(--text2)', fontWeight: 'bold', marginBottom: '8px', fontSize: '13px' }}
+                />
+                <Legend wrapperStyle={{ fontSize: '13px', paddingTop: '15px' }} iconType="circle" />
+                <Area type="monotone" dataKey="nieve" name="Bola de Nieve" stroke="var(--orange)" strokeWidth={3} fillOpacity={1} fill="url(#colorNieve)" activeDot={{r:6}} />
+                <Area type="monotone" dataKey="avalancha" name="Avalancha" stroke="var(--blue)" strokeWidth={3} fillOpacity={1} fill="url(#colorAvalancha)" activeDot={{r:6}} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
       
       <div className="card" style={{marginTop: '20px'}}>
         <div className="card-hdr">
@@ -92,7 +167,7 @@ export default function Estrategia() {
         ) : (
           <div className="tl-group" style={{marginTop:'10px'}}>
             {activePlan.list.map((d, idx) => {
-              const r = getRankBadge(idx, activePlan.list.length);
+              const r = getRankBadge(idx);
               const years = Math.floor(d.months / 12);
               const months = d.months % 12;
               const timeStr = d.months >= 360 ? '+30 años (Peligro)' : `${years > 0 ? `${years} años ` : ''}${months} meses`;

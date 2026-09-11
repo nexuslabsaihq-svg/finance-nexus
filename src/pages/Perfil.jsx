@@ -6,7 +6,7 @@ const ROLE_LABEL = { editor: 'Editor', viewer: 'Solo Lectura' };
 export default function Perfil() {
   const {
     usuario, setUsuario, configuracion, setConfiguracion, ahorros, deudas, authUser, activeUid,
-    workspaces, switchWorkspace, isOwnerWorkspace,
+    workspaces, switchWorkspace, isOwnerWorkspace, ingresos,
     pendingInvitations, acceptInvitation, rejectInvitation, leaveWorkspace,
     ownedCollaborators, inviteCollaborator, updateCollaboratorRole, removeCollaborator,
   } = useAppData();
@@ -17,7 +17,9 @@ export default function Perfil() {
   const [colabError, setColabError] = useState('');
   const [busyId, setBusyId] = useState(null);
 
-  const tasaAhorro = 34.4; // Mock calculation metric
+  const totalIngresos = ingresos.reduce((sum, i) => sum + i.monto, 0);
+  const totalAhorrado = ahorros.reduce((sum, a) => sum + a.actual, 0);
+  const tasaAhorro = totalIngresos > 0 ? ((totalAhorrado / totalIngresos) * 100).toFixed(1) : 0;
   const metas = ahorros.length;
   
   const handleSave = () => {

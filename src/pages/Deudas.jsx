@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useAppData } from '../context/AppDataContext';
 import { BANCOS_CHILE, TARJETAS_CREDITO_CHILE, formatMiles, parseMiles } from '../utils/chileData';
+import { BarChart, Bar, ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, ZAxis } from 'recharts';
+
+const COLORS = ['#E85D75', '#FF9A76', '#FBBF24', '#7ED321', '#6B7FD6', '#A855F7', '#38BDF8'];
 
 const getBalance = (debt) => Number(debt.balance ?? debt.monto) || 0;
 
@@ -21,6 +24,22 @@ export default function Deudas() {
   const tasaPromedio = deudas.length > 0 ? (deudas.reduce((sum, d) => sum + Number(d.tasa), 0) / deudas.length).toFixed(1) : 0;
   
   const hasHighInterest = deudas.some(d => Number(d.tasa) > 15);
+
+  const distribucionDeuda = useMemo(() => {
+    return deudas.map(d => ({
+      name: d.nombre.substring(0, 15) + (d.nombre.length > 15 ? '...' : ''),
+      value: getBalance(d)
+    })).filter(d => d.value > 0).sort((a,b) => b.value - a.value);
+  }, [deudas]);
+
+  const scatterData = useMemo(() => {
+    return deudas.map(d => ({
+      name: d.nombre,
+      balance: getBalance(d),
+      tasa: Number(d.tasa) || 0,
+      pago: Number(d.pagoMensual) || 0
+    })).filter(d => d.balance > 0);
+  }, [deudas]);
 
   const handleCreate = () => {
     if (!form.nombre || !form.balance) return;
@@ -102,7 +121,72 @@ export default function Deudas() {
           </div>
         </div>
       )}
-      
+
+      {deudas.length > 0 && (
+        <div style={{display:'flex', gap:'20px', flexWrap:'wrap'}}>
+          <div className="card" style={{flex: '1 1 300px', minWidth:'300px'}}>
+            <div className="card-hdr"><div className="card-title">🍩 Carga de Deuda</div></div>
+            <div style={{height:'300px', width:'100%'}}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <defs>
+                    <filter id="pieGlowDeuda" x="-20%" y="-20%" width="140%" height="140%">
+                      <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#000" floodOpacity="0.15"/>
+                    </filter>
+                  </defs>
+                  <Pie
+                    data={distribucionDeuda}
+                    innerRadius={70}
+                    outerRadius={100}
+                    paddingAngle={5}
+                    dataKey="value"
+                    stroke="var(--surface)"
+                    strokeWidth={2}
+                    filter="url(#pieGlowDeuda)"
+                  >
+                    {distribucionDeuda.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} style={{ outline: 'none' }} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip 
+                    formatter={(value) => [<span style={{fontWeight: 700, fontFamily: 'var(--mono)'}}>${Math.round(value).toLocaleString('es-CL')}</span>, 'Deuda']}
+                    contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', boxShadow: '0 8px 30px rgba(0,0,0,0.12)', color: 'var(--text)', padding: '12px' }}
+                    itemStyle={{ fontWeight: '500', color: 'var(--text2)' }}
+                  />
+                  <Legend layout="horizontal" verticalAlign="bottom" align="center" wrapperStyle={{fontSize:'12px', fontWeight: 500}} iconType="circle" />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="card" style={{flex: '2 1 400px'}}>
+            <div className="card-hdr">
+              <div><div className="card-title">⚠️ Tasa de Interés vs Balance</div><div className="card-sub">Encuentra las deudas más tóxicas (alto balance, alta tasa)</div></div>
+            </div>
+            <div style={{height:'300px', width:'100%', padding:'10px 0'}}>
+              <ResponsiveContainer width="100%" height="100%">
+                <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                  <CartesianGrid strokeDasharray="4 4" stroke="var(--border)" />
+                  <XAxis type="number" dataKey="balance" name="Balance" tickFormatter={(val) => `$${(val/1000)}k`} stroke="var(--text2)" tick={{fontSize: 12}} />
+                  <YAxis type="number" dataKey="tasa" name="Tasa %" unit="%" stroke="var(--text2)" tick={{fontSize: 12}} />
+                  <ZAxis type="number" dataKey="pago" range={[50, 400]} name="Pago Mensual" />
+                  <RechartsTooltip 
+                    cursor={{strokeDasharray: '3 3'}}
+                    contentStyle={{background:'var(--surface)', border:'1px solid var(--border)', borderRadius:'12px', boxShadow: '0 8px 30px rgba(0,0,0,0.12)', padding: '12px'}}
+                    formatter={(value, name) => [
+                      <span style={{fontWeight: 700, fontFamily: 'var(--mono)'}}>{name === 'Tasa %' ? `${value}%` : `$${value.toLocaleString('es-CL')}`}</span>, 
+                      name
+                    ]}
+                    labelFormatter={() => ''}
+                  />
+                  <Scatter name="Deudas" data={scatterData} fill="var(--pink)" />
+                </ScatterChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="g2">
         {deudas.map(d => {
           const s = getStyle(d.tasa);

@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useAppData } from '../context/AppDataContext';
 import { INSTITUCIONES_INVERSION_CHILE, TIPOS_INVERSION, formatMiles, parseMiles } from '../utils/chileData';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+
+const COLORS = ['#FF9A76', '#E85D75', '#7ED321', '#6B7FD6', '#A855F7', '#FBBF24', '#38BDF8'];
 
 export default function Inversiones() {
   const { inversiones, setInversiones } = useAppData();
@@ -18,6 +21,22 @@ export default function Inversiones() {
   const valorActual = inversiones.reduce((sum, i) => sum + Number(i.actual), 0);
   const ganancia = valorActual - totalInvertido;
   const retornoPromedio = totalInvertido > 0 ? ((ganancia / totalInvertido) * 100).toFixed(1) : 0;
+
+  const portafolioData = useMemo(() => {
+    const totals = inversiones.reduce((acc, inv) => {
+      acc[inv.tipo] = (acc[inv.tipo] || 0) + Number(inv.actual);
+      return acc;
+    }, {});
+    return Object.entries(totals).map(([name, value]) => ({ name, value })).filter(d => d.value > 0).sort((a,b) => b.value - a.value);
+  }, [inversiones]);
+
+  const rendimientoData = useMemo(() => {
+    return inversiones.map(inv => ({
+      name: inv.nombre.substring(0, 15) + (inv.nombre.length > 15 ? '...' : ''),
+      invertido: Number(inv.invertido),
+      actual: Number(inv.actual)
+    })).sort((a, b) => b.actual - a.actual);
+  }, [inversiones]);
 
   const handleCreate = () => {
     if (!form.nombre || !form.invertido || !form.actual) return;
@@ -54,28 +73,90 @@ export default function Inversiones() {
       <div className="g4">
         <div className="sc sc-b">
           <div className="sc-label">Total Invertido</div>
-          <div className="sc-val" style={{color:"var(--blue)"}}>${totalInvertido.toLocaleString()}</div>
-          <div className="sc-icon">💼</div>
+          <div className="sc-val">${totalInvertido.toLocaleString()}</div>
+          <div className="sc-icon" style={{color:"var(--blue)"}}>💼</div>
         </div>
         <div className="sc sc-o">
           <div className="sc-label">Valor Actual</div>
-          <div className="sc-val" style={{color:"var(--orange)"}}>${valorActual.toLocaleString()}</div>
-          <div className="sc-icon">📈</div>
+          <div className="sc-val">${valorActual.toLocaleString()}</div>
+          <div className="sc-icon" style={{color:"var(--orange)"}}>📈</div>
         </div>
         <div className="sc sc-g">
           <div className="sc-label">Ganancia</div>
-          <div className="sc-val" style={{color:"var(--green)"}}>{ganancia >= 0 ? '+' : ''}${ganancia.toLocaleString()}</div>
+          <div className="sc-val">{ganancia >= 0 ? '+' : ''}${ganancia.toLocaleString()}</div>
           <div className="sc-change ch-up">▲ +{retornoPromedio}%</div>
-          <div className="sc-icon">✨</div>
+          <div className="sc-icon" style={{color:"var(--green)"}}>✨</div>
         </div>
-        <div className="sc sc-g">
+        <div className="sc sc-pu">
           <div className="sc-label">Retorno Promedio</div>
-          <div className="sc-val" style={{color:"var(--green)"}}>{retornoPromedio}%</div>
+          <div className="sc-val">{retornoPromedio}%</div>
           <div className="sc-change ch-up">▲ Superando meta</div>
-          <div className="sc-icon">🎯</div>
+          <div className="sc-icon" style={{color:"var(--purple)"}}>🎯</div>
         </div>
       </div>
       
+      {inversiones.length > 0 && (
+        <div style={{display:'flex', gap:'20px', flexWrap:'wrap'}}>
+          <div className="card" style={{flex: '1 1 300px', minWidth:'300px'}}>
+            <div className="card-hdr"><div className="card-title">🍩 Composición del Portafolio</div></div>
+            <div style={{height:'300px', width:'100%'}}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <defs>
+                    <filter id="pieGlow" x="-20%" y="-20%" width="140%" height="140%">
+                      <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#000" floodOpacity="0.15"/>
+                    </filter>
+                  </defs>
+                  <Pie
+                    data={portafolioData}
+                    innerRadius={70}
+                    outerRadius={100}
+                    paddingAngle={5}
+                    dataKey="value"
+                    stroke="var(--surface)"
+                    strokeWidth={2}
+                    filter="url(#pieGlow)"
+                  >
+                    {portafolioData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} style={{ outline: 'none' }} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip 
+                    formatter={(value) => [<span style={{fontWeight: 700, fontFamily: 'var(--mono)'}}>${Math.round(value).toLocaleString('es-CL')}</span>, 'Valor Actual']}
+                    contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', boxShadow: '0 8px 30px rgba(0,0,0,0.12)', color: 'var(--text)', padding: '12px' }}
+                    itemStyle={{ fontWeight: '500', color: 'var(--text2)' }}
+                  />
+                  <Legend layout="horizontal" verticalAlign="bottom" align="center" wrapperStyle={{fontSize:'12px', fontWeight: 500}} iconType="circle" />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="card" style={{flex: '2 1 400px'}}>
+            <div className="card-hdr">
+              <div><div className="card-title">📊 Rendimiento por Instrumento</div><div className="card-sub">Invertido vs Actual</div></div>
+            </div>
+            <div style={{height:'300px', width:'100%', padding:'10px 0'}}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={rendimientoData} margin={{ top: 10, right: 10, left: 20, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="4 4" stroke="var(--border)" vertical={false} />
+                  <XAxis dataKey="name" stroke="var(--text2)" axisLine={false} tickLine={false} tick={{fontSize: 12, fontWeight: 500}} dy={10} angle={-15} textAnchor="end" />
+                  <YAxis stroke="var(--text2)" axisLine={false} tickLine={false} tick={{fontSize: 12, fontWeight: 500}} tickFormatter={(val) => `$${(val/1000)}k`} />
+                  <RechartsTooltip 
+                    contentStyle={{background:'var(--surface)', border:'1px solid var(--border)', borderRadius:'12px', boxShadow: '0 8px 30px rgba(0,0,0,0.12)', padding: '12px'}}
+                    formatter={(value, name) => [<span style={{fontWeight: 700, fontFamily: 'var(--mono)'}}>${Math.round(value).toLocaleString('es-CL')}</span>, name === 'invertido' ? 'Invertido' : 'Valor Actual']}
+                    labelStyle={{ color: 'var(--text2)', fontWeight: 'bold', marginBottom: '8px', fontSize: '13px' }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: '13px', paddingTop: '15px' }} iconType="circle" />
+                  <Bar dataKey="invertido" name="Invertido" fill="var(--blue)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="actual" name="Valor Actual" fill="var(--green)" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="g2">
         {inversiones.map((inv, idx) => {
           const gncia = Number(inv.actual) - Number(inv.invertido);

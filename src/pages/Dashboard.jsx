@@ -87,9 +87,9 @@ export default function Dashboard({ period }) {
       label,
       ingresos: filterByPeriod(ingresos, monthPrefix).reduce((sum, item) => sum + toAmount(item.monto), 0),
       gastos: filterByPeriod(gastos, monthPrefix).reduce((sum, item) => sum + toAmount(item.monto), 0),
-    })),
+    })).reverse(), // Invertimos para que el gráfico vaya de más antiguo a más reciente (izquierda a derecha)
     [period, ingresos, gastos],
-  ).reverse(); // Invertimos para que el gráfico vaya de más antiguo a más reciente (izquierda a derecha)
+  );
 
   const gastosPorCategoria = useMemo(() => {
     const totals = gastosMes.reduce((categories, gasto) => {
@@ -189,22 +189,35 @@ export default function Dashboard({ period }) {
               <div style={{ height: '260px', width: '100%', marginTop: '10px' }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={monthlyHistory} margin={{ top: 10, right: 20, bottom: 5, left: 15 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
-                    <XAxis dataKey="label" stroke="var(--text2)" tick={{ fontSize: 13, fill: 'var(--text2)' }} dy={10} />
+                    <defs>
+                      <filter id="glowGreen" x="-20%" y="-20%" width="140%" height="140%">
+                        <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor="#34D399" floodOpacity="0.4"/>
+                      </filter>
+                      <filter id="glowPink" x="-20%" y="-20%" width="140%" height="140%">
+                        <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor="#F87171" floodOpacity="0.4"/>
+                      </filter>
+                    </defs>
+                    <CartesianGrid strokeDasharray="4 4" stroke="var(--border)" vertical={false} />
+                    <XAxis dataKey="label" stroke="var(--text2)" axisLine={false} tickLine={false} tick={{ fontSize: 13, fill: 'var(--text2)', fontWeight: 500 }} dy={10} />
                     <YAxis 
                       stroke="var(--text2)" 
-                      tick={{ fontSize: 13, fill: 'var(--text2)' }} 
+                      axisLine={false} 
+                      tickLine={false}
+                      tick={{ fontSize: 13, fill: 'var(--text2)', fontWeight: 500 }} 
                       tickFormatter={(val) => `$${Math.round(val).toLocaleString('es-CL')}`} 
                       width={80} 
                     />
                     <RechartsTooltip 
-                      contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text)' }}
-                      formatter={(value) => [`$${Math.round(value).toLocaleString('es-CL')}`, undefined]}
-                      labelStyle={{ color: 'var(--text2)', fontWeight: 'bold', marginBottom: '5px' }}
+                      contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', boxShadow: '0 8px 30px rgba(0,0,0,0.12)', color: 'var(--text)', padding: '12px' }}
+                      formatter={(value, name) => [
+                        <span style={{fontWeight: 700, fontFamily: 'var(--mono)'}}>${Math.round(value).toLocaleString('es-CL')}</span>, 
+                        <span style={{color: 'var(--text2)'}}>{name}</span>
+                      ]}
+                      labelStyle={{ color: 'var(--text2)', fontWeight: 'bold', marginBottom: '8px', fontSize: '13px' }}
                     />
-                    <Legend wrapperStyle={{ fontSize: '13px', paddingTop: '10px' }} />
-                    <Line type="monotone" dataKey="ingresos" name="Ingresos" stroke="var(--green)" strokeWidth={4} dot={{r:4, fill: 'var(--green)'}} activeDot={{r:6}} />
-                    <Line type="monotone" dataKey="gastos" name="Gastos" stroke="var(--pink)" strokeWidth={4} dot={{r:4, fill: 'var(--pink)'}} activeDot={{r:6}} />
+                    <Legend wrapperStyle={{ fontSize: '13px', paddingTop: '15px' }} iconType="circle" />
+                    <Line type="monotone" dataKey="ingresos" name="Ingresos" stroke="var(--green)" strokeWidth={4} dot={{r:5, fill: 'var(--surface)', stroke: 'var(--green)', strokeWidth: 2}} activeDot={{r:7, fill: 'var(--green)', stroke: 'var(--surface)', strokeWidth: 2}} filter="url(#glowGreen)" />
+                    <Line type="monotone" dataKey="gastos" name="Gastos" stroke="var(--pink)" strokeWidth={4} dot={{r:5, fill: 'var(--surface)', stroke: 'var(--pink)', strokeWidth: 2}} activeDot={{r:7, fill: 'var(--pink)', stroke: 'var(--surface)', strokeWidth: 2}} filter="url(#glowPink)" />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -217,24 +230,31 @@ export default function Dashboard({ period }) {
               <div style={{ height: '260px', width: '100%', marginTop: '10px' }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
+                    <defs>
+                      <filter id="pieGlow" x="-20%" y="-20%" width="140%" height="140%">
+                        <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#000" floodOpacity="0.15"/>
+                      </filter>
+                    </defs>
                     <Pie
                       data={gastosPorCategoria}
-                      innerRadius={60}
-                      outerRadius={90}
-                      paddingAngle={4}
+                      innerRadius={55}
+                      outerRadius={85}
+                      paddingAngle={5}
                       dataKey="value"
-                      stroke="none"
+                      stroke="var(--surface)"
+                      strokeWidth={2}
                       label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                      labelLine={{ stroke: 'var(--text3)', strokeWidth: 1 }}
+                      labelLine={{ stroke: 'var(--text3)', strokeWidth: 1.5, strokeOpacity: 0.5 }}
+                      filter="url(#pieGlow)"
                     >
                       {gastosPorCategoria.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} style={{ outline: 'none' }} />
                       ))}
                     </Pie>
                     <RechartsTooltip 
-                      formatter={(value) => [`$${Math.round(value).toLocaleString('es-CL')}`, undefined]}
-                      contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text)' }}
-                      itemStyle={{ fontWeight: 'bold' }}
+                      formatter={(value) => [<span style={{fontWeight: 700, fontFamily: 'var(--mono)'}}>${Math.round(value).toLocaleString('es-CL')}</span>, 'Total']}
+                      contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', boxShadow: '0 8px 30px rgba(0,0,0,0.12)', color: 'var(--text)', padding: '12px' }}
+                      itemStyle={{ fontWeight: '500', color: 'var(--text2)' }}
                     />
                   </PieChart>
                 </ResponsiveContainer>
@@ -295,7 +315,15 @@ export default function Dashboard({ period }) {
 }
 
 function Metric({ label, value, icon, color, detail }) {
-  return <div className="sc sc-b"><div className="sc-label">{label}</div><div className="sc-val" style={{ color }}>{value}</div><div className="sc-change ch-n">{detail}</div><div className="sc-icon">{icon}</div></div>;
+  const bgMap = {
+    'var(--orange)': 'sc-o',
+    'var(--pink)': 'sc-p',
+    'var(--green)': 'sc-g',
+    'var(--blue)': 'sc-b',
+    'var(--purple)': 'sc-pu'
+  };
+  const bgClass = bgMap[color] || 'sc-b';
+  return <div className={`sc ${bgClass}`}><div className="sc-label">{label}</div><div className="sc-val">{value}</div><div className="sc-change ch-n">{detail}</div><div className="sc-icon" style={{color}}>{icon}</div></div>;
 }
 
 function EmptyState({ message }) {

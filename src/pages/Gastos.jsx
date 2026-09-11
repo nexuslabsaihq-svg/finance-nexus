@@ -70,10 +70,10 @@ export default function Gastos() {
 
       <div className="page-hdr"><div><div className="page-title">💸 Gastos</div><div className="page-sub">Presupuesto y análisis por categoría</div></div></div>
       <div className="g4">
-        <div className="sc sc-b"><div className="sc-label">Presupuesto Total</div><div className="sc-val" style={{"color":"var(--blue)"}}>${totalPresupuesto.toLocaleString()}</div><div className="sc-icon">📋</div></div>
-        <div className="sc sc-p"><div className="sc-label">Gasto Actual</div><div className="sc-val" style={{"color":"var(--pink)"}}>${totalGasto.toLocaleString()}</div><div className="sc-change ch-dn">▼ {pctUso}% utilizado</div><div className="sc-icon">💸</div></div>
-        <div className="sc sc-o"><div className="sc-label">Disponible</div><div className="sc-val" style={{"color":"var(--orange)"}}>${disponible.toLocaleString()}</div><div className="sc-change ch-n">{100 - pctUso}% restante</div><div className="sc-icon">💡</div></div>
-        <div className="sc sc-g"><div className="sc-label">Transacciones</div><div className="sc-val" style={{"color":"var(--green)"}}>{gastos.length}</div><div className="sc-icon">🔢</div></div>
+        <div className="sc sc-b"><div className="sc-label">Presupuesto Total</div><div className="sc-val">${totalPresupuesto.toLocaleString()}</div><div className="sc-icon" style={{color: "var(--blue)"}}>📋</div></div>
+        <div className="sc sc-p"><div className="sc-label">Gasto Actual</div><div className="sc-val">${totalGasto.toLocaleString()}</div><div className="sc-change ch-dn">▼ {pctUso}% utilizado</div><div className="sc-icon" style={{color: "var(--pink)"}}>💸</div></div>
+        <div className="sc sc-o"><div className="sc-label">Disponible</div><div className="sc-val">${disponible.toLocaleString()}</div><div className="sc-change ch-n">{100 - pctUso}% restante</div><div className="sc-icon" style={{color: "var(--orange)"}}>💡</div></div>
+        <div className="sc sc-g"><div className="sc-label">Transacciones</div><div className="sc-val">{gastos.length}</div><div className="sc-icon" style={{color: "var(--green)"}}>🔢</div></div>
       </div>
       {pctUso > 80 && (
         <div className="alert al-o"><span className="al-icon">⚠️</span><div className="al-body"><div className="al-title" style={{"color":"var(--orange)"}}>Atención</div>Has usado el {pctUso}% de tu presupuesto mensual. Quedan ${disponible.toLocaleString()} disponibles.</div></div>

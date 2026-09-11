@@ -83,7 +83,7 @@ export default function Configuracion() {
         </div>
         
         <div className="card" style={{borderTop:"2px solid var(--purple)"}}>
-          <div className="card-hdr"><div className="card-title" style={{color:"var(--purple)"}}>🎨 Apariencia Global</div></div>
+          <div className="card-hdr"><div className="card-title" style={{color:"var(--purple)"}}>🎨 Experiencia Global</div></div>
           <div className="fg" style={{gap:"10px"}}>
             <div className="fgrp">
               <label className="flbl">Tema UI</label>
@@ -100,6 +100,16 @@ export default function Configuracion() {
                 <option value="EUR">EUR</option>
               </select>
             </div>
+          </div>
+          <div className="trow" style={{marginTop:"15px", paddingTop:"15px", borderTop:"1px solid var(--border)"}}>
+            <div>
+              <div className="tg-lbl">Mostrar Tour de Bienvenida</div>
+              <div className="tg-desc">Reactiva los recuadros interactivos que te guían por Finance Nexus.</div>
+            </div>
+            <label className="toggle">
+              <input type="checkbox" checked={configuracion.showTour !== false} onChange={() => updateConfig('showTour', configuracion.showTour === false ? true : false)} />
+              <span className="ttr"></span>
+            </label>
           </div>
         </div>
 
@@ -210,50 +220,79 @@ export default function Configuracion() {
           
           <button className="btn btn-o btn-sm" style={{marginBottom:"14px"}} onClick={handleAddCategory}>+ Agregar Categoría</button>
           
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "10px" }}>
-            {cleanCategories.map((c, idx) => (
-              <div key={idx} style={{
-                display: "flex", 
-                flexDirection: "column",
-                justifyContent: "space-between", 
-                padding: "12px 14px", 
-                background: c.type === 'Ingreso' ? 'linear-gradient(135deg, rgba(52,211,153,0.1), rgba(20,184,166,0.15))' : 'linear-gradient(135deg, rgba(248,113,113,0.1), rgba(255,140,90,0.15))', 
-                border: c.type === 'Ingreso' ? '1px solid rgba(52,211,153,0.3)' : '1px solid rgba(248,113,113,0.3)',
-                borderRadius: "12px", 
-                fontSize: "13px",
-                flex: "1 1 140px",
-                maxWidth: "200px",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-                position: "relative"
-              }}>
-                <div style={{ fontWeight: "600", color: "var(--text)", marginBottom: "12px", wordBreak: "break-word" }}>{c.name}</div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
-                  <span style={{ fontSize: "10px", color: c.type === 'Ingreso' ? 'var(--green)' : 'var(--pink)', fontWeight: "700" }}>{c.type.toUpperCase()}</span>
-                  <button className="btn btn-d btn-sm" style={{ padding: "4px", minWidth: "24px", height: "24px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => removeCategory(c.original)}>🗑️</button>
-                </div>
+          <div className="g2">
+            <div style={{ background: "rgba(52,211,153,0.05)", border: "1px solid rgba(52,211,153,0.2)", borderRadius: "12px", padding: "15px" }}>
+              <div style={{ color: "var(--green)", fontWeight: "bold", marginBottom: "15px", display: "flex", alignItems: "center", gap: "8px" }}>
+                <span>💰</span> Categorías de Ingreso
               </div>
-            ))}
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+                {cleanCategories.filter(c => c.type === 'Ingreso').length === 0 ? (
+                  <div style={{ fontSize: "12px", color: "var(--text2)", fontStyle: "italic" }}>No hay categorías de ingreso.</div>
+                ) : (
+                  cleanCategories.filter(c => c.type === 'Ingreso').map((c, idx) => (
+                    <div key={idx} style={{
+                      display: "flex", flexDirection: "column", justifyContent: "space-between", padding: "12px 14px", 
+                      background: 'linear-gradient(135deg, rgba(52,211,153,0.1), rgba(20,184,166,0.15))', 
+                      border: '1px solid rgba(52,211,153,0.3)', borderRadius: "12px", fontSize: "13px",
+                      flex: "1 1 140px", maxWidth: "200px", boxShadow: "0 4px 12px rgba(0,0,0,0.05)"
+                    }}>
+                      <div style={{ fontWeight: "600", color: "var(--text)", marginBottom: "12px", wordBreak: "break-word" }}>{c.name}</div>
+                      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                        <button className="btn btn-d btn-sm" style={{ padding: "4px", minWidth: "24px", height: "24px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => removeCategory(c.original)}>🗑️</button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div style={{ background: "rgba(248,113,113,0.05)", border: "1px solid rgba(248,113,113,0.2)", borderRadius: "12px", padding: "15px" }}>
+              <div style={{ color: "var(--pink)", fontWeight: "bold", marginBottom: "15px", display: "flex", alignItems: "center", gap: "8px" }}>
+                <span>📉</span> Categorías de Gasto
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+                {cleanCategories.filter(c => c.type === 'Gasto').length === 0 ? (
+                  <div style={{ fontSize: "12px", color: "var(--text2)", fontStyle: "italic" }}>No hay categorías de gasto.</div>
+                ) : (
+                  cleanCategories.filter(c => c.type === 'Gasto').map((c, idx) => (
+                    <div key={idx} style={{
+                      display: "flex", flexDirection: "column", justifyContent: "space-between", padding: "12px 14px", 
+                      background: 'linear-gradient(135deg, rgba(248,113,113,0.1), rgba(255,140,90,0.15))', 
+                      border: '1px solid rgba(248,113,113,0.3)', borderRadius: "12px", fontSize: "13px",
+                      flex: "1 1 140px", maxWidth: "200px", boxShadow: "0 4px 12px rgba(0,0,0,0.05)"
+                    }}>
+                      <div style={{ fontWeight: "600", color: "var(--text)", marginBottom: "12px", wordBreak: "break-word" }}>{c.name}</div>
+                      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                        <button className="btn btn-d btn-sm" style={{ padding: "4px", minWidth: "24px", height: "24px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => removeCategory(c.original)}>🗑️</button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* MODO DESARROLLADOR: BOTÓN DE REINICIO DE EXPERIENCIA */}
-        <div style={{marginTop: "30px", padding: "15px", border: "1px dashed var(--pink)", borderRadius: "12px", textAlign: "center", background: "rgba(255, 77, 79, 0.05)"}}>
-          <div style={{color: "var(--pink)", fontWeight: "bold", fontSize: "12px", marginBottom: "8px"}}>🛠️ Zona de Pruebas (Modo Dev)</div>
-          <p style={{fontSize: "12px", color: "var(--text2)", marginBottom: "15px", margin: "0 0 15px 0"}}>Usa este botón para borrar tu llave API actual y olvidar que viste el tutorial. Así podrás vivir la experiencia de un usuario nuevo desde cero.</p>
-          <button 
-            className="btn btn-o" 
-            style={{borderColor: "var(--pink)", color: "var(--pink)", fontSize: "12px"}}
-            onClick={() => {
-              updateConfig('geminiApiKey', '');
-              setApiKeyInput('');
-              setUsuario(prev => ({ ...prev, hasSeenTutorial: false }));
-              alert('🔄 Experiencia reiniciada. Se borró la Llave API y el Tutorial. La página se recargará para simular un inicio fresco.');
-              window.location.href = '/';
-            }}
-          >
-            🔄 Simular Usuario Nuevo (Borrar Llave y Tutorial)
-          </button>
-        </div>
+        {/* MODO DESARROLLADOR: BOTÓN DE REINICIO DE EXPERIENCIA (Solo en Dev) */}
+        {import.meta.env?.DEV && (
+          <div style={{marginTop: "30px", padding: "15px", border: "1px dashed var(--pink)", borderRadius: "12px", textAlign: "center", background: "rgba(255, 77, 79, 0.05)"}}>
+            <div style={{color: "var(--pink)", fontWeight: "bold", fontSize: "12px", marginBottom: "8px"}}>🛠️ Zona de Pruebas (Modo Dev)</div>
+            <p style={{fontSize: "12px", color: "var(--text2)", marginBottom: "15px", margin: "0 0 15px 0"}}>Usa este botón para borrar tu llave API actual y olvidar que viste el tutorial. Así podrás vivir la experiencia de un usuario nuevo desde cero.</p>
+            <button 
+              className="btn btn-o" 
+              style={{borderColor: "var(--pink)", color: "var(--pink)", fontSize: "12px"}}
+              onClick={() => {
+                setConfiguracion(prev => ({ ...prev, geminiApiKey: '', showTour: true }));
+                setApiKeyInput('');
+                setUsuario(prev => ({ ...prev, hasSeenTutorial: false }));
+                alert('🔄 Experiencia reiniciada. Se borró la Llave API y el Tutorial. La página se recargará para simular un inicio fresco.');
+                window.location.href = '/';
+              }}
+            >
+              🔄 Simular Usuario Nuevo (Borrar Llave y Tutorial)
+            </button>
+          </div>
+        )}
 
       </div>
     </div>

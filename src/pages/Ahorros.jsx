@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useAppData } from '../context/AppDataContext';
 import { formatMiles, parseMiles } from '../utils/chileData';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+
+const COLORS = ['#FF9A76', '#E85D75', '#7ED321', '#6B7FD6', '#A855F7', '#FBBF24', '#38BDF8'];
 
 export default function Ahorros() {
   const { ahorros, setAhorros } = useAppData();
@@ -20,6 +23,30 @@ export default function Ahorros() {
   const pctPromedio = ahorros.length > 0 
     ? ahorros.reduce((sum, a) => sum + Math.min(100, (Number(a.actual || 0) / Number(a.objetivo || 1)) * 100), 0) / ahorros.length
     : 0;
+
+  const distribucionData = useMemo(() => {
+    return ahorros.map(a => ({
+      name: a.nombre,
+      value: Number(a.actual || 0)
+    })).filter(a => a.value > 0).sort((a,b) => b.value - a.value);
+  }, [ahorros]);
+
+  const proyeccionData = useMemo(() => {
+    const data = [];
+    let currentTotal = totalAhorrado;
+    const monthlyContribution = ahorros.reduce((sum, a) => sum + Number(a.aporte || 0), 0);
+    
+    const today = new Date();
+    for(let i=0; i<=12; i++) {
+      const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
+      data.push({
+        mes: d.toLocaleDateString('es-CL', {month: 'short', year:'2-digit'}).replace('.', ''),
+        total: currentTotal
+      });
+      currentTotal += monthlyContribution;
+    }
+    return data;
+  }, [ahorros, totalAhorrado]);
 
   const handleCreate = () => {
     if (!form.nombre || !form.meta) return;
@@ -70,20 +97,20 @@ export default function Ahorros() {
       <div className="g3">
         <div className="sc sc-g">
           <div className="sc-label">Total Ahorrado</div>
-          <div className="sc-val" style={{color:"var(--green)"}}>${totalAhorrado.toLocaleString()}</div>
+          <div className="sc-val">${totalAhorrado.toLocaleString()}</div>
           <div className="sc-change ch-up">▲ {metasActivas} metas activas</div>
-          <div className="sc-icon">💎</div>
+          <div className="sc-icon" style={{color:"var(--green)"}}>💎</div>
         </div>
         <div className="sc sc-b">
           <div className="sc-label">Metas Activas</div>
-          <div className="sc-val" style={{color:"var(--blue)"}}>{metasActivas}</div>
-          <div className="sc-icon">🎯</div>
+          <div className="sc-val">{metasActivas}</div>
+          <div className="sc-icon" style={{color:"var(--blue)"}}>🎯</div>
         </div>
         <div className="sc sc-o">
           <div className="sc-label">Progreso Promedio</div>
-          <div className="sc-val" style={{color:"var(--orange)"}}>{pctPromedio.toFixed(1)}%</div>
+          <div className="sc-val">{pctPromedio.toFixed(1)}%</div>
           <div className="sc-change ch-up">▲ Buen ritmo</div>
-          <div className="sc-icon">📊</div>
+          <div className="sc-icon" style={{color:"var(--orange)"}}>📊</div>
         </div>
       </div>
       
@@ -118,6 +145,75 @@ export default function Ahorros() {
           )
         })}
       </div>
+
+      {ahorros.length > 0 && (
+        <div style={{display:'flex', gap:'20px', flexWrap:'wrap'}}>
+          <div className="card" style={{flex: '2 1 400px'}}>
+            <div className="card-hdr">
+              <div><div className="card-title">📈 Proyección a 12 Meses</div><div className="card-sub">Crecimiento estimado manteniendo contribuciones</div></div>
+            </div>
+            <div style={{height:'300px', width:'100%', padding:'10px 0'}}>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={proyeccionData} margin={{ top: 10, right: 10, left: 20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorAhorro" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="var(--blue)" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="var(--blue)" stopOpacity={0}/>
+                    </linearGradient>
+                    <filter id="glowBlue" x="-20%" y="-20%" width="140%" height="140%">
+                      <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor="#3B82F6" floodOpacity="0.4"/>
+                    </filter>
+                  </defs>
+                  <CartesianGrid strokeDasharray="4 4" stroke="var(--border)" vertical={false} />
+                  <XAxis dataKey="mes" stroke="var(--text2)" axisLine={false} tickLine={false} tick={{fontSize: 12, fontWeight: 500}} dy={10} />
+                  <YAxis stroke="var(--text2)" axisLine={false} tickLine={false} tick={{fontSize: 12, fontWeight: 500}} tickFormatter={(val) => `$${(val/1000)}k`} />
+                  <RechartsTooltip 
+                    contentStyle={{background:'var(--surface)', border:'1px solid var(--border)', borderRadius:'12px', boxShadow: '0 8px 30px rgba(0,0,0,0.12)', padding: '12px'}}
+                    formatter={(value) => [<span style={{fontWeight: 700, fontFamily: 'var(--mono)'}}>${Math.round(value).toLocaleString('es-CL')}</span>, 'Proyectado']}
+                    labelStyle={{ color: 'var(--text2)', fontWeight: 'bold', marginBottom: '8px', fontSize: '13px' }}
+                  />
+                  <Area type="monotone" dataKey="total" stroke="var(--blue)" strokeWidth={4} fillOpacity={1} fill="url(#colorAhorro)" activeDot={{r:7, fill: 'var(--blue)', stroke: 'var(--surface)', strokeWidth: 2}} filter="url(#glowBlue)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="card" style={{flex: '1 1 300px', minWidth:'300px'}}>
+            <div className="card-hdr"><div className="card-title">🍩 Distribución del Capital</div></div>
+            <div style={{height:'300px', width:'100%'}}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <defs>
+                    <filter id="pieGlow" x="-20%" y="-20%" width="140%" height="140%">
+                      <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#000" floodOpacity="0.15"/>
+                    </filter>
+                  </defs>
+                  <Pie
+                    data={distribucionData}
+                    innerRadius={70}
+                    outerRadius={100}
+                    paddingAngle={5}
+                    dataKey="value"
+                    stroke="var(--surface)"
+                    strokeWidth={2}
+                    filter="url(#pieGlow)"
+                  >
+                    {distribucionData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} style={{ outline: 'none' }} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip 
+                    formatter={(value) => [<span style={{fontWeight: 700, fontFamily: 'var(--mono)'}}>${Math.round(value).toLocaleString('es-CL')}</span>, 'Ahorrado']}
+                    contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', boxShadow: '0 8px 30px rgba(0,0,0,0.12)', color: 'var(--text)', padding: '12px' }}
+                    itemStyle={{ fontWeight: '500', color: 'var(--text2)' }}
+                  />
+                  <Legend layout="horizontal" verticalAlign="bottom" align="center" wrapperStyle={{fontSize:'12px', fontWeight: 500}} iconType="circle" />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      )}
       
       <div className="card">
         <div className="card-hdr"><div className="card-title">➕ Nueva Meta de Ahorro</div></div>

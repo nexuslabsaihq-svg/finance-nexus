@@ -8,12 +8,13 @@ import { generateNexusUltimatePrompt } from '../utils/nexusUltimatePrompt';
 import * as XLSX from 'xlsx';
 
 export default function IA() {
-  const { chatsIA, setChatsIA, ingresos, gastos, ahorros, deudas, bancos, inversiones, authUser, configuracion, setActivePage } = useAppData();
+  const { chatsIA, setChatsIA, sesionesIA, setSesionesIA, ingresos, gastos, ahorros, deudas, bancos, inversiones, authUser, configuracion, setActivePage } = useAppData();
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [file, setFile] = useState(null);
   const [rateLimitExceeded, setRateLimitExceeded] = useState(false);
-  const [pendingRetry, setPendingRetry] = useState(null); // Guarda la orden para reintentar con 1 clic
+  const [pendingRetry, setPendingRetry] = useState(null);
+  const [currentSessionId, setCurrentSessionId] = useState(null);
   const chatEndRef = useRef(null);
 
   // Microphone State
@@ -73,7 +74,6 @@ export default function IA() {
 
   const processFileForGemini = async (fileObj) => {
     const name = fileObj.name.toLowerCase();
-    // Si es Excel o CSV, lo procesamos como texto usando XLSX
     if (name.endsWith('.xlsx') || name.endsWith('.xls') || name.endsWith('.csv')) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -93,7 +93,6 @@ export default function IA() {
         reader.readAsArrayBuffer(fileObj);
       });
     } else {
-      // Imágenes y PDFs se envían como inlineData nativa
       return new Promise((resolve) => {
         const reader = new FileReader();
         reader.onloadend = () => resolve({
@@ -104,10 +103,41 @@ export default function IA() {
     }
   };
 
+  // --- Session Management ---
+  const saveCurrentSession = () => {
+    if (chatsIA.length > 0) {
+      const titleObj = chatsIA.find(m => m.role === 'user');
+      const title = titleObj ? titleObj.content.substring(0, 25) + '...' : 'Chat sin título';
+      const sId = currentSessionId || Date.now().toString();
+      setSesionesIA(prev => {
+        const filtered = (prev || []).filter(s => s.id !== sId);
+        return [{ id: sId, title, date: new Date().toLocaleDateString(), messages: [...chatsIA] }, ...filtered];
+      });
+    }
+  };
+
+  const handleNewChat = () => {
+    saveCurrentSession();
+    setChatsIA([]);
+    setCurrentSessionId(null);
+    setPendingRetry(null);
+  };
+
+  const loadChat = (session) => {
+    saveCurrentSession();
+    setChatsIA(session.messages);
+    setCurrentSessionId(session.id);
+    setPendingRetry(null);
+  };
+
   const clearChat = () => {
-    if(window.confirm('¿Seguro que deseas reiniciar la conversación? Nexus Ai Ultimate Synthesis olvidará este hilo.')){
+    if(window.confirm('¿Seguro que deseas limpiar este chat? Si lo haces, se eliminará el historial visible actual.')){
       setChatsIA([]);
       setPendingRetry(null);
+      if (currentSessionId) {
+        setSesionesIA(prev => (prev || []).filter(s => s.id !== currentSessionId));
+        setCurrentSessionId(null);
+      }
     }
   };
 
@@ -172,28 +202,20 @@ export default function IA() {
         userParts.push(await processFileForGemini(currentFile));
       }
 
-      // 1. Descubrimiento dinámico de modelos autorizados para esta clave en Google
       let dynamicModels = [];
       try {
         const checkRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${activeApiKey}`);
         const checkData = await checkRes.json();
-        if (checkData.error) {
-          throw new Error(`Google API: ${checkData.error.message}`);
-        }
+        if (checkData.error) throw new Error(`Google API: ${checkData.error.message}`);
         if (checkData.models && Array.isArray(checkData.models)) {
           dynamicModels = checkData.models
             .filter(m => m.supportedGenerationMethods && m.supportedGenerationMethods.includes("generateContent"))
             .map(m => m.name.replace("models/", ""));
-          console.log("[Finance Nexus] Modelos autorizados para tu clave:", dynamicModels);
         }
       } catch (checkErr) {
-        if (checkErr.message.includes("Google API:")) {
-          throw checkErr;
-        }
-        console.warn("[Finance Nexus] No se pudo autodescubrir modelos:", checkErr.message);
+        if (checkErr.message.includes("Google API:")) throw checkErr;
       }
 
-      // Priorizar flash dentro de los modelos autorizados
       const fallbackChain = dynamicModels.length > 0 
         ? [
             ...dynamicModels.filter(m => m.includes("2.5-flash")),
@@ -201,27 +223,19 @@ export default function IA() {
             ...dynamicModels.filter(m => m.includes("1.5-flash")),
             ...dynamicModels
           ].filter((v, i, a) => a.indexOf(v) === i)
-        : [
-            "gemini-2.5-flash",
-            "gemini-2.0-flash",
-            "gemini-1.5-flash"
-          ];
+        : [ "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash" ];
 
       let finalResponseText = null;
       let lastError = null;
 
       for (const modelName of fallbackChain) {
         try {
-          console.log(`[Finance Nexus] Conectando con: ${modelName}...`);
           const model = genAI.getGenerativeModel({ model: modelName, systemInstruction: systemPrompt });
           const chat = model.startChat({ history: formattedHistory });
-          
           const result = await chat.sendMessage(userParts);
           finalResponseText = result.response.text();
-          console.log(`[Finance Nexus] ✔️ Éxito con ${modelName}`);
           break;
         } catch (apiError) {
-          console.warn(`[Finance Nexus] ❌ Fallo en ${modelName}:`, apiError.message);
           lastError = apiError;
           if (apiError.message.includes("API key not valid") || apiError.message.includes("API_KEY_INVALID")) {
             throw new Error("API_KEY_INVALID: La API Key ingresada no es válida. Por favor, renuévala en Google AI Studio y guárdala en Configuración.");
@@ -230,10 +244,8 @@ export default function IA() {
       }
 
       if (!finalResponseText) {
-        // Auto-Retry Logic silencioso para 503 / overloaded
         if (lastError && (lastError.message.includes("503") || lastError.message.includes("overloaded"))) {
           if (retryCount < 2) {
-            console.log(`[Finance Nexus] Auto-reintentando silenciosamente (Intento ${retryCount + 1}/2)...`);
             setTimeout(() => sendPrompt(txt, currentFile, true, retryCount + 1), 3000);
             return;
           }
@@ -241,33 +253,32 @@ export default function IA() {
         throw new Error(lastError?.message ? `Error del servidor de IA: ${lastError.message}` : "Alta demanda en la red de IA. Presiona 'Reintentar' para reanudar.");
       }
       
-      setChatsIA(prev => [...prev, { 
-        id: Date.now() + 1, 
-        role: 'assistant', 
-        content: finalResponseText, 
-        time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) 
-      }]);
-      setPendingRetry(null); // Éxito: limpiar reintento pendiente
+      setChatsIA(prev => {
+        const newMsg = { id: Date.now() + 1, role: 'assistant', content: finalResponseText, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) };
+        const updated = [...prev, newMsg];
+        
+        // Auto-save the session when assistant replies
+        const titleObj = updated.find(m => m.role === 'user');
+        const title = titleObj ? titleObj.content.substring(0, 25) + '...' : 'Chat sin título';
+        const sId = currentSessionId || Date.now().toString();
+        
+        setSesionesIA(sPrev => {
+          const filtered = (sPrev || []).filter(s => s.id !== sId);
+          return [{ id: sId, title, date: new Date().toLocaleDateString(), messages: updated }, ...filtered];
+        });
+        if (!currentSessionId) setCurrentSessionId(sId);
+        
+        return updated;
+      });
+      setPendingRetry(null);
     } catch (e) {
-      console.error("[Finance Nexus Error]:", e);
       setChatsIA(prev => [...prev, {
-        id: Date.now() + 1, 
-        role: 'assistant', 
-        isError: true, 
+        id: Date.now() + 1, role: 'assistant', isError: true, 
         isMissingKey: e.message.includes("FALTA_KEY") || e.message.includes("API_KEY_INVALID"),
-        content: `⚠️ **Sistema Interrumpido:** ${e.message}`, 
-        time: new Date().toLocaleTimeString()
+        content: `⚠️ **Sistema Interrumpido:** ${e.message}`, time: new Date().toLocaleTimeString()
       }]);
     } finally {
-      if (!isAutoRetry) {
-         setLoading(false);
-      }
-    }
-  };
-
-  const handleFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
+      if (!isAutoRetry) setLoading(false);
     }
   };
 
@@ -283,9 +294,10 @@ export default function IA() {
             <div className="page-sub">Sistema Unificado de Inteligencia Estratégica Financiera</div>
           </div>
         </div>
-        <div style={{display:"flex", gap:"10px"}}>
-          <button className="btn btn-gh btn-sm" onClick={exportPDF}>📄 Exportar PDF</button>
-          <button className="btn btn-gh btn-sm" onClick={clearChat} style={{color:"var(--pink)"}}>🗑 Limpiar</button>
+        <div style={{display:"flex", gap:"10px", flexWrap:'wrap'}}>
+          <button className="btn btn-gh btn-sm" onClick={handleNewChat} style={{color: "var(--green)"}}><span>➕</span> Nuevo Chat</button>
+          <button className="btn btn-gh btn-sm" onClick={exportPDF}><span>📄</span> Exportar PDF</button>
+          <button className="btn btn-gh btn-sm" onClick={clearChat} style={{color:"var(--pink)"}}><span>🧹</span> Limpiar</button>
         </div>
       </div>
       
@@ -295,158 +307,195 @@ export default function IA() {
         </div>
       )}
       
-      <div className="card" style={{flex: 1, display: 'flex', flexDirection: 'column', overflow:"hidden", background:"rgba(18, 20, 30, 0.4)", backdropFilter:"blur(10px)", border:"1px solid rgba(255,255,255,0.05)"}}>
-        
-        <div style={{flex: 1, overflowY: 'auto', padding: '15px', display: 'flex', flexDirection: 'column', gap: '20px'}}>
-          
-          {chatsIA.length === 0 && (
-            <div style={{display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", flex:1, opacity:0.8, animation:"fadeIn 1s ease"}}>
-               <div style={{fontSize:"50px", marginBottom:"15px", filter:"grayscale(0.5)"}}>🧠</div>
-               <div style={{fontSize:"20px", fontWeight:"700", color:"var(--text)"}}>Nexus Ai Ultimate Synthesis</div>
-               <div style={{fontSize:"14px", color:"var(--text2)", marginBottom:"25px"}}>Precisión clínica. Cero alucinaciones. Listo para auditar tus finanzas.</div>
-               
-               <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px", width:"100%", maxWidth:"500px"}}>
-                 <button className="btn btn-gh" style={{textAlign:"left", padding:"12px"}} onClick={()=>sendPrompt('Diagnostica mi flujo de caja actual y calcula mi DTI.')}>📊 Diagnóstico y DTI</button>
-                 <button className="btn btn-gh" style={{textAlign:"left", padding:"12px"}} onClick={()=>sendPrompt('Quiero que evalúes si estoy en riesgo de quiebra inminente.')}>⚠️ Evaluación de Quiebra</button>
-                 <button className="btn btn-gh" style={{textAlign:"left", padding:"12px"}} onClick={()=>sendPrompt('Proyéctame el exterminio de mis deudas usando el método Avalancha.')}>🏔️ Plan Avalancha Deudas</button>
-                 <button className="btn btn-gh" style={{textAlign:"left", padding:"12px"}} onClick={()=>sendPrompt('Diseña un plan táctico para constituir mi Fondo de Emergencia Pleno.')}>🛡️ Plan Fondo Emergencia</button>
-               </div>
-            </div>
-          )}
-
-          {chatsIA.map(msg => (
-            <div key={msg.id} style={{
-              display:"flex", flexDirection: msg.role === 'user' ? "row-reverse" : "row", gap:"12px", alignItems:"flex-end", animation:"float 0.3s ease-out"
-            }}>
-              {msg.role === 'assistant' && (
-                <div style={{width:"32px", height:"32px", borderRadius:"8px", flexShrink:0, background:"linear-gradient(135deg, var(--blue), var(--purple))", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"15px", boxShadow:"0 2px 10px rgba(107,127,214,0.3)"}}>🧠</div>
-              )}
-              {msg.role === 'user' && (
-                <div style={{width:"32px", height:"32px", borderRadius:"8px", flexShrink:0, background:"var(--surface3)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"15px"}}>👤</div>
-              )}
-              
-              <div style={{display:"flex", flexDirection:"column", alignItems: msg.role === 'user' ? "flex-end" : "flex-start", maxWidth:"75%"}}>
-                 <div style={{
-                   background: msg.role === 'user' ? 'linear-gradient(135deg, #2b3040, var(--surface2))' : 'rgba(255,255,255,0.03)',
-                   color: 'var(--text)',
-                   padding: '14px 18px', borderRadius: '16px', fontSize: '14px', lineHeight: '1.6',
-                   border: msg.role === 'user' ? '1px solid rgba(255,255,255,0.05)' : '1px solid var(--border)',
-                   borderBottomRightRadius: msg.role === 'user' ? '4px' : '16px',
-                   borderBottomLeftRadius: msg.role !== 'user' ? '4px' : '16px'
-                 }}>
-                   {msg.attachment && <div style={{background:"rgba(107,127,214,0.1)", color:"var(--blue)", border:"1px solid rgba(107,127,214,0.3)", padding:"6px 10px", borderRadius:"6px", fontSize:"12px", marginBottom:"8px", display:"inline-flex", gap:"6px", alignItems:"center"}}>📎 {msg.attachment}</div>}
-                   <div style={{whiteSpace: 'pre-wrap'}} dangerouslySetInnerHTML={{__html: DOMPurify.sanitize(msg.content.replace(/\*([^*]+)\*/g, '<b>$1</b>'), { ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'br'], ALLOWED_ATTR: [] })}} />
-                   {msg.isMissingKey && (
-                     <div style={{marginTop: "12px", display: "flex", gap: "8px", flexWrap: "wrap"}}>
-                       <button className="btn btn-p btn-sm" style={{background: "var(--orange)", borderColor: "var(--orange)", fontSize: "12px"}} onClick={() => setActivePage('configuracion')}>
-                         ⚙️ Ir a Configuración para ingresar tu API Key
-                       </button>
-                     </div>
-                   )}
-                   {msg.isError && pendingRetry && (
-                     <div style={{marginTop: "10px"}}>
-                       <button className="btn btn-o btn-sm" style={{borderColor: "var(--blue)", color: "var(--blue)", fontSize: "12px"}} onClick={() => sendPrompt(pendingRetry.text, pendingRetry.file)}>
-                         🔄 Reintentar esta consulta con 1 clic
-                       </button>
-                     </div>
-                   )}
-                 </div>
-                 <div style={{fontSize:"10px", color:"var(--text3)", marginTop:"5px"}}>{msg.time}</div>
-              </div>
-            </div>
-          ))}
-          {loading && (
-            <div style={{display:"flex", gap:"12px", alignItems:"flex-end"}}>
-              <div style={{width:"32px", height:"32px", borderRadius:"8px", flexShrink:0, background:"linear-gradient(135deg, var(--blue), var(--purple))", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"15px", boxShadow:"0 2px 10px rgba(107,127,214,0.3)"}}>🧠</div>
-              <div style={{background: 'rgba(255,255,255,0.03)', color: 'var(--text2)', padding: '12px 18px', borderRadius: '16px', fontSize: '13px', border: '1px solid var(--border)', borderBottomLeftRadius: '4px'}}>
-                <span style={{display:"inline-flex", gap:"4px"}}>
-                  <span style={{animation:"bounce 1s infinite", animationDelay:"0s"}}>Nexus</span>
-                  <span style={{animation:"bounce 1s infinite", animationDelay:"0.2s"}}>está</span>
-                  <span style={{animation:"bounce 1s infinite", animationDelay:"0.4s"}}>analizando...</span>
-                </span>
-              </div>
-            </div>
-          )}
-          <div ref={chatEndRef} />
-        </div>
-        
-        {/* BARRA INTELIGENTE DE ACCIÓN RÁPIDA (REINTENTO Y CONTINUAR) */}
-        {chatsIA.length > 0 && !loading && (
-          <div style={{padding: "8px 15px", background: "rgba(255,255,255,0.03)", borderTop: "1px solid var(--border)", display: "flex", gap: "8px", overflowX: "auto", alignItems: "center"}}>
-            {chatsIA[chatsIA.length - 1]?.isError && pendingRetry ? (
-              <button 
-                className="btn btn-p btn-sm" 
-                style={{background: "linear-gradient(135deg, var(--orange), #f5222d)", border: "none", fontSize: "12px", display: "flex", alignItems: "center", gap: "5px", padding: "6px 12px"}}
-                onClick={() => sendPrompt(pendingRetry.text, pendingRetry.file)}
-              >
-                🔄 Reintentar última consulta
-              </button>
+      <div style={{display: 'flex', gap: '20px', flex: 1, overflow: 'hidden'}}>
+        {/* SIDEBAR HISTORY */}
+        <div className="card" style={{width: '250px', display: 'flex', flexDirection: 'column', background:"var(--surface)", border:"1px solid var(--border)", overflow: 'hidden'}}>
+          <div style={{padding: '15px', borderBottom: '1px solid var(--border)', fontWeight: 'bold', color: 'var(--text)', fontSize: '14px'}}>
+            📚 Historial de Análisis
+          </div>
+          <div style={{flex: 1, overflowY: 'auto', padding: '10px', display: 'flex', flexDirection: 'column', gap: '5px'}}>
+            {(!sesionesIA || sesionesIA.length === 0) ? (
+              <div style={{color: 'var(--text2)', fontSize: '12px', textAlign: 'center', padding: '20px 0'}}>No hay sesiones anteriores.</div>
             ) : (
-              <>
-                <button 
-                  className="btn btn-gh btn-sm" 
-                  style={{fontSize: "12px", display: "flex", alignItems: "center", gap: "5px", background: "rgba(107,127,214,0.1)", color: "var(--blue)", border: "1px solid rgba(107,127,214,0.3)", padding: "6px 12px"}}
-                  onClick={() => sendPrompt("Continúa exactamente donde te quedaste con el análisis numérico en profundidad.")}
+              sesionesIA.map(session => (
+                <div 
+                  key={session.id} 
+                  onClick={() => loadChat(session)}
+                  style={{
+                    padding: '10px', 
+                    borderRadius: '8px', 
+                    cursor: 'pointer',
+                    background: currentSessionId === session.id ? 'var(--surface3)' : 'transparent',
+                    border: currentSessionId === session.id ? '1px solid var(--border)' : '1px solid transparent',
+                    transition: 'all 0.2s ease',
+                    fontSize: '12px'
+                  }}
+                  onMouseOver={(e) => { if(currentSessionId !== session.id) e.currentTarget.style.background = 'var(--surface2)' }}
+                  onMouseOut={(e) => { if(currentSessionId !== session.id) e.currentTarget.style.background = 'transparent' }}
                 >
-                  ▶️ Continuar análisis
-                </button>
-                <button 
-                  className="btn btn-gh btn-sm" 
-                  style={{fontSize: "12px", padding: "6px 12px"}}
-                  onClick={() => sendPrompt("Diagnostica mi flujo de caja actual y calcula mi DTI con mis datos actuales.")}
-                >
-                  📊 Flujo de Caja & DTI
-                </button>
-                <button 
-                  className="btn btn-gh btn-sm" 
-                  style={{fontSize: "12px", padding: "6px 12px"}}
-                  onClick={() => sendPrompt("Proyéctame el exterminio de mis deudas usando el método Avalancha.")}
-                >
-                  🏔️ Plan Avalancha Deudas
-                </button>
-              </>
+                  <div style={{fontWeight: 'bold', color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}}>
+                    {session.title}
+                  </div>
+                  <div style={{color: 'var(--text2)', fontSize: '10px', marginTop: '4px'}}>
+                    {session.date} - {session.messages?.length || 0} mensajes
+                  </div>
+                </div>
+              ))
             )}
           </div>
-        )}
+        </div>
 
-        <div style={{padding:"15px", borderTop:"1px solid var(--border)", background:"var(--surface)", display:"flex", flexDirection:"column", gap:"10px"}}>
-          {file && (
-            <div style={{display:"flex", alignItems:"center", gap:"10px", padding:"8px 12px", background:"var(--surface3)", borderRadius:"8px", fontSize:"12px", width:"fit-content"}}>
-              <span style={{color:"var(--text2)"}}>Adjunto: {file.name}</span>
-              <button className="btn btn-d btn-sm" style={{padding:"2px 6px"}} onClick={() => setFile(null)}>✖</button>
+        {/* MAIN CHAT */}
+        <div className="card" style={{flex: 1, display: 'flex', flexDirection: 'column', overflow:"hidden", background:"var(--surface)", backdropFilter:"blur(10px)", border:"1px solid var(--border)"}}>
+          <div style={{flex: 1, overflowY: 'auto', padding: '15px', display: 'flex', flexDirection: 'column', gap: '20px'}}>
+            {chatsIA.length === 0 && (
+              <div style={{display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", flex:1, opacity:0.8, animation:"fadeIn 1s ease"}}>
+                 <div style={{fontSize:"50px", marginBottom:"15px", filter:"grayscale(0.5)"}}>🧠</div>
+                 <div style={{fontSize:"20px", fontWeight:"700", color:"var(--text)"}}>Nexus Ai Ultimate Synthesis</div>
+                 <div style={{fontSize:"14px", color:"var(--text2)", marginBottom:"25px"}}>Precisión clínica. Cero alucinaciones. Listo para auditar tus finanzas.</div>
+                 
+                 <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:"12px", width:"100%", maxWidth:"500px"}}>
+                   <button className="btn btn-gh" style={{textAlign:"left", padding:"12px"}} onClick={()=>sendPrompt('Diagnostica mi flujo de caja actual y calcula mi DTI.')}>📊 Diagnóstico y DTI</button>
+                   <button className="btn btn-gh" style={{textAlign:"left", padding:"12px"}} onClick={()=>sendPrompt('Quiero que evalúes si estoy en riesgo de quiebra inminente.')}>⚠️ Evaluación de Quiebra</button>
+                   <button className="btn btn-gh" style={{textAlign:"left", padding:"12px"}} onClick={()=>sendPrompt('Proyéctame el exterminio de mis deudas usando el método Avalancha.')}>🏔️ Plan Avalancha Deudas</button>
+                   <button className="btn btn-gh" style={{textAlign:"left", padding:"12px"}} onClick={()=>sendPrompt('Diseña un plan táctico para constituir mi Fondo de Emergencia Pleno.')}>🛡️ Plan Fondo Emergencia</button>
+                 </div>
+              </div>
+            )}
+
+            {chatsIA.map(msg => (
+              <div key={msg.id} style={{
+                display:"flex", flexDirection: msg.role === 'user' ? "row-reverse" : "row", gap:"12px", alignItems:"flex-end", animation:"float 0.3s ease-out"
+              }}>
+                {msg.role === 'assistant' && (
+                  <div style={{width:"32px", height:"32px", borderRadius:"8px", flexShrink:0, background:"linear-gradient(135deg, var(--blue), var(--purple))", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"15px", boxShadow:"0 2px 10px rgba(107,127,214,0.3)"}}>🧠</div>
+                )}
+                {msg.role === 'user' && (
+                  <div style={{width:"32px", height:"32px", borderRadius:"8px", flexShrink:0, background:"var(--surface3)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"15px"}}>👤</div>
+                )}
+                
+                <div style={{display:"flex", flexDirection:"column", alignItems: msg.role === 'user' ? "flex-end" : "flex-start", maxWidth:"75%"}}>
+                   <div style={{
+                     background: msg.role === 'user' ? 'var(--surface3)' : 'var(--glass)',
+                     color: 'var(--text)',
+                     padding: '14px 18px', borderRadius: '16px', fontSize: '14px', lineHeight: '1.6',
+                     border: '1px solid var(--border)',
+                     borderBottomRightRadius: msg.role === 'user' ? '4px' : '16px',
+                     borderBottomLeftRadius: msg.role !== 'user' ? '4px' : '16px'
+                   }}>
+                     {msg.attachment && <div style={{background:"rgba(107,127,214,0.1)", color:"var(--blue)", border:"1px solid rgba(107,127,214,0.3)", padding:"6px 10px", borderRadius:"6px", fontSize:"12px", marginBottom:"8px", display:"inline-flex", gap:"6px", alignItems:"center"}}>📎 {msg.attachment}</div>}
+                     <div style={{whiteSpace: 'pre-wrap'}} dangerouslySetInnerHTML={{__html: DOMPurify.sanitize(msg.content.replace(/\*([^*]+)\*/g, '<b>$1</b>'), { ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'br'], ALLOWED_ATTR: [] })}} />
+                     {msg.isMissingKey && (
+                       <div style={{marginTop: "12px", display: "flex", gap: "8px", flexWrap: "wrap"}}>
+                         <button className="btn btn-p btn-sm" style={{background: "var(--orange)", borderColor: "var(--orange)", fontSize: "12px"}} onClick={() => setActivePage('configuracion')}>
+                           ⚙️ Ir a Configuración para ingresar tu API Key
+                         </button>
+                       </div>
+                     )}
+                     {msg.isError && pendingRetry && (
+                       <div style={{marginTop: "10px"}}>
+                         <button className="btn btn-o btn-sm" style={{borderColor: "var(--blue)", color: "var(--blue)", fontSize: "12px"}} onClick={() => sendPrompt(pendingRetry.text, pendingRetry.file)}>
+                           🔄 Reintentar esta consulta con 1 clic
+                         </button>
+                       </div>
+                     )}
+                   </div>
+                   <div style={{fontSize:"10px", color:"var(--text3)", marginTop:"5px"}}>{msg.time}</div>
+                </div>
+              </div>
+            ))}
+            {loading && (
+              <div style={{display:"flex", gap:"12px", alignItems:"flex-end"}}>
+                <div style={{width:"32px", height:"32px", borderRadius:"8px", flexShrink:0, background:"linear-gradient(135deg, var(--blue), var(--purple))", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"15px", boxShadow:"0 2px 10px rgba(107,127,214,0.3)"}}>🧠</div>
+                <div style={{background: 'var(--glass)', color: 'var(--text2)', padding: '12px 18px', borderRadius: '16px', fontSize: '13px', border: '1px solid var(--border)', borderBottomLeftRadius: '4px'}}>
+                  <span style={{display:"inline-flex", gap:"4px"}}>
+                    <span style={{animation:"bounce 1s infinite", animationDelay:"0s"}}>Nexus</span>
+                    <span style={{animation:"bounce 1s infinite", animationDelay:"0.2s"}}>está</span>
+                    <span style={{animation:"bounce 1s infinite", animationDelay:"0.4s"}}>analizando...</span>
+                  </span>
+                </div>
+              </div>
+            )}
+            <div ref={chatEndRef} />
+          </div>
+          
+          {chatsIA.length > 0 && !loading && (
+            <div style={{padding: "8px 15px", background: "var(--glass2)", borderTop: "1px solid var(--border)", display: "flex", gap: "8px", overflowX: "auto", alignItems: "center"}}>
+              {chatsIA[chatsIA.length - 1]?.isError && pendingRetry ? (
+                <button 
+                  className="btn btn-p btn-sm" 
+                  style={{background: "linear-gradient(135deg, var(--orange), #f5222d)", border: "none", fontSize: "12px", display: "flex", alignItems: "center", gap: "5px", padding: "6px 12px"}}
+                  onClick={() => sendPrompt(pendingRetry.text, pendingRetry.file)}
+                >
+                  🔄 Reintentar última consulta
+                </button>
+              ) : (
+                <>
+                  <button 
+                    className="btn btn-gh btn-sm" 
+                    style={{fontSize: "12px", display: "flex", alignItems: "center", gap: "5px", background: "rgba(107,127,214,0.1)", color: "var(--blue)", border: "1px solid rgba(107,127,214,0.3)", padding: "6px 12px"}}
+                    onClick={() => sendPrompt("Continúa exactamente donde te quedaste con el análisis numérico en profundidad.")}
+                  >
+                    ▶️ Continuar análisis
+                  </button>
+                  <button 
+                    className="btn btn-gh btn-sm" 
+                    style={{fontSize: "12px", padding: "6px 12px"}}
+                    onClick={() => sendPrompt("Diagnostica mi flujo de caja actual y calcula mi DTI con mis datos actuales.")}
+                  >
+                    📊 Flujo de Caja & DTI
+                  </button>
+                  <button 
+                    className="btn btn-gh btn-sm" 
+                    style={{fontSize: "12px", padding: "6px 12px"}}
+                    onClick={() => sendPrompt("Proyéctame el exterminio de mis deudas usando el método Avalancha.")}
+                  >
+                    🏔️ Plan Avalancha Deudas
+                  </button>
+                </>
+              )}
             </div>
           )}
 
-          <div style={{display: 'flex', gap: '8px', alignItems:'center'}}>
-            <label style={{cursor:"pointer", background:"var(--surface3)", width:"44px", height:"44px", borderRadius:"12px", display:"flex", alignItems:"center", justifyContent:"center", transition:"background 0.2s"}} onMouseOver={e=>e.currentTarget.style.background="var(--border)"} onMouseOut={e=>e.currentTarget.style.background="var(--surface3)"}>
-              📎
-              <input type="file" style={{display:"none"}} accept="image/*,application/pdf,.xlsx,.xls,.csv" onChange={(e) => setFile(e.target.files[0])} />
-            </label>
-            <button 
-              className="btn btn-gh" 
-              style={{width:"44px", height:"44px", borderRadius:"12px", padding:0, fontSize:"18px", background: isListening ? "rgba(255,77,79,0.2)" : "transparent", color: isListening ? "#ff4d4f" : "var(--text)"}} 
-              title="Dictado por voz"
-              onClick={toggleListen}
-            >
-              🎤
-            </button>
-            
-            <input 
-              type="text" 
-              className="finp" 
-              placeholder={rateLimitExceeded ? "Límite de mensajes alcanzado..." : isListening ? "Te estoy escuchando..." : "Consulta a Nexus Ai Ultimate Synthesis..."} 
-              value={input} 
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && sendPrompt()}
-              style={{flex: 1, height:"44px", borderRadius:"12px", background:"rgba(0,0,0,0.2)"}}
-              disabled={loading || rateLimitExceeded}
-            />
-            <button className="btn btn-p" onClick={() => sendPrompt()} disabled={loading || rateLimitExceeded || (!input.trim() && !file)} style={{height:"44px", borderRadius:"12px", padding:"0 24px", fontWeight:"700", background:"linear-gradient(135deg, var(--blue), var(--purple))", border:"none", boxShadow:"0 4px 15px rgba(107,127,214,0.3)"}}>
-              🚀
-            </button>
-          </div>
-          <div style={{textAlign:"center", fontSize:"10px", color:"var(--text3)", marginTop:"-2px"}}>
-            Las directivas de Nexus Ai Ultimate Synthesis deben ser verificadas. Este sistema aplica rigor matemático bajo la normativa chilena.
+          <div style={{padding:"15px", borderTop:"1px solid var(--border)", background:"var(--surface)", display:"flex", flexDirection:"column", gap:"10px"}}>
+            {file && (
+              <div style={{display:"flex", alignItems:"center", gap:"10px", padding:"8px 12px", background:"var(--surface3)", borderRadius:"8px", fontSize:"12px", width:"fit-content"}}>
+                <span style={{color:"var(--text2)"}}>Adjunto: {file.name}</span>
+                <button className="btn btn-d btn-sm" style={{padding:"2px 6px"}} onClick={() => setFile(null)}>✖</button>
+              </div>
+            )}
+
+            <div style={{display: 'flex', gap: '8px', alignItems:'center'}}>
+              <label style={{cursor:"pointer", background:"var(--surface3)", width:"44px", height:"44px", borderRadius:"12px", display:"flex", alignItems:"center", justifyContent:"center", transition:"background 0.2s"}} onMouseOver={e=>e.currentTarget.style.background="var(--border)"} onMouseOut={e=>e.currentTarget.style.background="var(--surface3)"}>
+                📎
+                <input type="file" style={{display:"none"}} accept="image/*,application/pdf,.xlsx,.xls,.csv" onChange={(e) => setFile(e.target.files[0])} />
+              </label>
+              <button 
+                className="btn btn-gh" 
+                style={{width:"44px", height:"44px", borderRadius:"12px", padding:0, fontSize:"18px", background: isListening ? "rgba(255,77,79,0.2)" : "transparent", color: isListening ? "#ff4d4f" : "var(--text)"}} 
+                title="Dictado por voz"
+                onClick={toggleListen}
+              >
+                🎤
+              </button>
+              
+              <input 
+                type="text" 
+                className="finp" 
+                placeholder={rateLimitExceeded ? "Límite de mensajes alcanzado..." : isListening ? "Te estoy escuchando..." : "Consulta a Nexus Ai Ultimate Synthesis..."} 
+                value={input} 
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && sendPrompt()}
+                style={{flex: 1, height:"44px", borderRadius:"12px", background:"var(--surface3)"}}
+                disabled={loading || rateLimitExceeded}
+              />
+              <button className="btn btn-p" onClick={() => sendPrompt()} disabled={loading || rateLimitExceeded || (!input.trim() && !file)} style={{height:"44px", borderRadius:"12px", padding:"0 24px", fontWeight:"700", background:"linear-gradient(135deg, var(--blue), var(--purple))", border:"none", boxShadow:"0 4px 15px rgba(107,127,214,0.3)"}}>
+                🚀
+              </button>
+            </div>
+            <div style={{textAlign:"center", fontSize:"10px", color:"var(--text3)", marginTop:"-2px"}}>
+              Las directivas de Nexus Ai Ultimate Synthesis deben ser verificadas. Este sistema aplica rigor matemático bajo la normativa chilena.
+            </div>
           </div>
         </div>
       </div>

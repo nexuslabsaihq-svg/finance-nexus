@@ -1,15 +1,70 @@
 import React from 'react';
 import { Joyride, STATUS } from 'react-joyride';
 import { useAppData } from '../context/AppDataContext';
+import { BrandLogo } from '../pages/Landing';
+
+const CustomTooltip = ({
+  index,
+  step,
+  backProps,
+  closeProps,
+  primaryProps,
+  tooltipProps,
+  isLastStep
+}) => {
+  return (
+    <div {...tooltipProps} style={{
+      background: 'var(--surface)',
+      border: '1px solid var(--border)',
+      borderRadius: '16px',
+      padding: '24px',
+      width: '100%',
+      maxWidth: '420px',
+      boxShadow: '0 20px 50px rgba(0,0,0,0.8)',
+      boxSizing: 'border-box',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '15px'
+    }}>
+      {/* Header con el Logo */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1px solid var(--border)', paddingBottom: '15px' }}>
+        <div style={{ width: '40px', height: '40px', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <BrandLogo size={32} />
+        </div>
+        <div style={{ fontWeight: '800', fontSize: '18px', color: 'var(--text)' }}>
+          {step.title}
+        </div>
+      </div>
+      
+      {/* Contenido principal */}
+      <div style={{ fontSize: '14px', color: 'var(--text2)', lineHeight: '1.6' }}>
+        {step.content}
+      </div>
+      
+      {/* Controles del pie */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
+        <button {...closeProps} className="btn btn-gh btn-sm" style={{ color: 'var(--text3)' }}>Saltar Tour</button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {index > 0 && (
+            <button {...backProps} className="btn btn-gh btn-sm">Atrás</button>
+          )}
+          <button {...primaryProps} className="btn btn-p btn-sm" style={{ background: 'linear-gradient(135deg, var(--blue), var(--purple))', border: 'none', boxShadow: '0 4px 15px rgba(107,127,214,0.3)', padding: '6px 16px' }}>
+            {isLastStep ? 'Terminar' : 'Siguiente'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function TourGuide() {
-  const { usuario, setUsuario } = useAppData();
+  const { configuracion, setConfiguracion } = useAppData();
 
   const steps = [
     {
       target: 'body',
       placement: 'center',
-      title: '¡Bienvenido a Finance Nexus! 🚀',
+      title: '¡Bienvenido a Finance Nexus!',
       content: 'Vamos a darte un recorrido rápido para que aprendas a usar tu nueva bóveda financiera como un experto. ¿Listo?',
       disableBeacon: true,
     },
@@ -40,46 +95,28 @@ export default function TourGuide() {
     const finishedStatuses = [STATUS.FINISHED, STATUS.SKIPPED];
     
     if (finishedStatuses.includes(status)) {
-      setUsuario(prev => ({ ...prev, hasSeenTutorial: true }));
+      setConfiguracion(prev => ({ ...prev, showTour: false }));
     }
   };
 
-  if (usuario?.hasSeenTutorial) return null;
+  // Por defecto, si showTour no existe, se muestra.
+  if (configuracion?.showTour === false) return null;
 
   return (
     <Joyride
       steps={steps}
       run={true}
       continuous={true}
-      showProgress={true}
+      showProgress={false}
       showSkipButton={true}
       callback={handleJoyrideCallback}
+      tooltipComponent={CustomTooltip}
       styles={{
         options: {
-          primaryColor: '#00d2ff',
-          backgroundColor: 'var(--surface)',
-          textColor: 'var(--text)',
-          overlayColor: 'rgba(0, 0, 0, 0.7)',
-        },
-        tooltipContainer: {
-          textAlign: 'left',
-          borderRadius: '12px',
-          border: '1px solid rgba(0,210,255,0.2)',
-        },
-        buttonNext: {
-          borderRadius: '8px',
-          fontWeight: 'bold',
-        },
-        buttonBack: {
-          color: 'var(--text2)',
+          arrowColor: 'var(--surface)',
+          overlayColor: 'rgba(0, 0, 0, 0.95)',
+          zIndex: 10000,
         }
-      }}
-      locale={{
-        back: 'Atrás',
-        close: 'Cerrar',
-        last: 'Finalizar',
-        next: 'Siguiente',
-        skip: 'Saltar Tutorial'
       }}
     />
   );

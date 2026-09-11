@@ -96,8 +96,6 @@ export default function Ingresos() {
     return {x, y, val};
   });
   
-  const strokePath = `M ${pts.map(p => `${p.x},${p.y}`).join(' L ')}`;
-  const fillPath = `M 0,90 L ${pts.map(p => `${p.x},${p.y}`).join(' L ')} L 520,90 Z`;
   const monthLabels = last6Months.map(d => {
     const str = d.toLocaleString('es', {month: 'short'});
     return str.charAt(0).toUpperCase() + str.slice(1);
@@ -108,22 +106,30 @@ export default function Ingresos() {
 
       <div className="page-hdr"><div><div className="page-title">💰 Ingresos</div><div className="page-sub">Registro y análisis de fuentes de ingresos</div></div></div>
       <div className="g4">
-        <div className="sc sc-o"><div className="sc-label">Ingresos Totales</div><div className="sc-val" style={{"color":"var(--orange)"}}>${total.toLocaleString()}</div><div className="sc-change ch-n">Histórico</div><div className="sc-icon">💰</div></div>
-        <div className="sc sc-g"><div className="sc-label">Promedio Transacción</div><div className="sc-val" style={{"color":"var(--green)"}}>${promed.toLocaleString(undefined, {maximumFractionDigits:0})}</div><div className="sc-change ch-n">General</div><div className="sc-icon">📊</div></div>
-        <div className="sc sc-b"><div className="sc-label">Transacciones</div><div className="sc-val" style={{"color":"var(--blue)"}}>{ingresos.length}</div><div className="sc-change ch-up">▲</div><div className="sc-icon">🔢</div></div>
-        <div className="sc sc-pu"><div className="sc-label">Mayor Ingreso</div><div className="sc-val" style={{"color":"var(--purple)"}}>${max.toLocaleString()}</div><div className="sc-change ch-n">Máximo</div><div className="sc-icon">🏆</div></div>
+        <div className="sc sc-o"><div className="sc-label">Ingresos Totales</div><div className="sc-val">${total.toLocaleString()}</div><div className="sc-change ch-n">Histórico</div><div className="sc-icon" style={{color: "var(--orange)"}}>💰</div></div>
+        <div className="sc sc-g"><div className="sc-label">Promedio Transacción</div><div className="sc-val">${promed.toLocaleString(undefined, {maximumFractionDigits:0})}</div><div className="sc-change ch-n">General</div><div className="sc-icon" style={{color: "var(--green)"}}>📊</div></div>
+        <div className="sc sc-b"><div className="sc-label">Transacciones</div><div className="sc-val">{ingresos.length}</div><div className="sc-change ch-up">▲</div><div className="sc-icon" style={{color: "var(--blue)"}}>🔢</div></div>
+        <div className="sc sc-pu"><div className="sc-label">Mayor Ingreso</div><div className="sc-val">${max.toLocaleString()}</div><div className="sc-change ch-n">Máximo</div><div className="sc-icon" style={{color: "var(--purple)"}}>🏆</div></div>
       </div>
       
       <div className="card"><div className="card-hdr"><div><div className="card-title">Tendencia de Ingresos</div><div className="card-sub">Últimos 6 meses</div></div><span className="badge bg">Gráfico Dinámico</span></div>
-        <svg width="100%" viewBox="0 0 520 90" preserveAspectRatio="none" style={{"height":"90px", overflow: "visible"}}>
-          <defs><linearGradient id="gi2" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#34D399" stopOpacity="0.3"/><stop offset="95%" stopColor="#34D399" stopOpacity="0.01"/></linearGradient></defs>
-          <path d={fillPath} fill="url(#gi2)"/>
-          <path d={strokePath} fill="none" stroke="#34D399" strokeWidth="2.5"/>
+        <svg width="100%" viewBox="0 0 520 120" preserveAspectRatio="none" style={{"height":"120px", overflow: "visible"}}>
+          <defs>
+            <linearGradient id="gi2" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#34D399" stopOpacity="0.4"/><stop offset="95%" stopColor="#34D399" stopOpacity="0.01"/></linearGradient>
+            <filter id="svgGlow" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor="#34D399" floodOpacity="0.4"/>
+            </filter>
+          </defs>
+          <path d={`M 0,110 L ${pts.map(p => `${p.x},${p.y * (110/80)}`).join(' L ')} L 520,110 Z`} fill="url(#gi2)"/>
+          <path d={`M ${pts.map(p => `${p.x},${p.y * (110/80)}`).join(' L ')}`} fill="none" stroke="#34D399" strokeWidth="3" filter="url(#svgGlow)"/>
           {pts.map((p, i) => (
-            <circle key={i} cx={p.x} cy={p.y} r="4" fill="#34D399" stroke="var(--surface)" strokeWidth="1.5" />
+            <g key={i}>
+              <circle cx={p.x} cy={p.y * (110/80)} r="5" fill="var(--surface)" stroke="#34D399" strokeWidth="2.5" />
+              <text x={p.x} y={(p.y * (110/80)) - 12} fontSize="9" fontWeight="700" fill="var(--text2)" textAnchor="middle">${formatMiles(p.val)}</text>
+            </g>
           ))}
           {monthLabels.map((lbl, i) => (
-            <text key={i} x={i * (520/5)} y="88" fontSize="9" fill="rgba(139,156,200,0.6)" fontFamily="var(--font)" textAnchor={i === 0 ? "start" : i === 5 ? "end" : "middle"}>{lbl}</text>
+            <text key={`lbl-${i}`} x={i * (520/5)} y="118" fontSize="10" fontWeight="600" fill="var(--text3)" fontFamily="var(--font)" textAnchor={i === 0 ? "start" : i === 5 ? "end" : "middle"}>{lbl}</text>
           ))}
         </svg>
       </div>
@@ -137,24 +143,31 @@ export default function Ingresos() {
             <div style={{ height: '300px', width: '100%', marginTop: '10px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
+                  <defs>
+                    <filter id="pieGlow" x="-20%" y="-20%" width="140%" height="140%">
+                      <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#000" floodOpacity="0.15"/>
+                    </filter>
+                  </defs>
                   <Pie
                     data={ingresosPorCat}
-                    innerRadius={70}
-                    outerRadius={100}
-                    paddingAngle={4}
+                    innerRadius={65}
+                    outerRadius={95}
+                    paddingAngle={5}
                     dataKey="value"
-                    stroke="none"
+                    stroke="var(--surface)"
+                    strokeWidth={2}
                     label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    labelLine={{ stroke: 'var(--text3)', strokeWidth: 1 }}
+                    labelLine={{ stroke: 'var(--text3)', strokeWidth: 1.5, strokeOpacity: 0.5 }}
+                    filter="url(#pieGlow)"
                   >
                     {ingresosPorCat.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} style={{ outline: 'none' }} />
                     ))}
                   </Pie>
                   <RechartsTooltip 
-                    formatter={(value) => [`$${Math.round(value).toLocaleString('es-CL')}`, undefined]}
-                    contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text)' }}
-                    itemStyle={{ fontWeight: 'bold' }}
+                    formatter={(value) => [<span style={{fontWeight: 700, fontFamily: 'var(--mono)'}}>${Math.round(value).toLocaleString('es-CL')}</span>, 'Total']}
+                    contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', boxShadow: '0 8px 30px rgba(0,0,0,0.12)', color: 'var(--text)', padding: '12px' }}
+                    itemStyle={{ fontWeight: '500', color: 'var(--text2)' }}
                   />
                 </PieChart>
               </ResponsiveContainer>

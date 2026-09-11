@@ -313,6 +313,7 @@ export const AppDataProvider = ({ children }) => {
   const [chatsIA, setChatsIA] = useFirestoreState('fn_chatsIA', [
     { id: 1, role: 'assistant', content: '¡Hola! Soy tu asistente financiero impulsado por IA. ¿En qué te puedo ayudar hoy?', time: new Date().toISOString() }
   ]);
+  const [sesionesIA, setSesionesIA] = useFirestoreState('fn_sesiones_ia', []);
   const [notificaciones, setNotificaciones] = useFirestoreState('fn_notifs', []);
   const [configuracion, setConfiguracion] = useFirestoreState('fn_config', {
     tema: 'dark', moneda: 'CLP', notifEmail: true, notifPush: true,
@@ -340,7 +341,7 @@ export const AppDataProvider = ({ children }) => {
     gastos, setGastos, transferencias, setTransferencias,
     bancos, setBancos, ahorros, setAhorros,
     inversiones, setInversiones, deudas, setDeudas,
-    presupuestos, setPresupuestos, chatsIA, setChatsIA,
+    presupuestos, setPresupuestos, chatsIA, setChatsIA, sesionesIA, setSesionesIA,
     notificaciones, setNotificaciones, configuracion, setConfiguracion,
     sesiones, setSesiones, removeSesion, closeAllSesiones,
     // Cuentas colaborativas / espacios de trabajo compartidos

@@ -3,47 +3,65 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
 
-    function collaboratorPath(userId) {
-      return /databases/(default)/documents/users/$(userId)/collaborators/$(request.auth.token.email.lower());
+    // ============================================================
+    // FUNCIONES DE SEGURIDAD Y VALIDACIÓN
+    // ============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
     }
 
-    function isActiveCollaborator(userId) {
-      return request.auth.token.email != null
-        && firestore.exists(collaboratorPath(userId))
-        && firestore.get(collaboratorPath(userId)).data.status == 'active';
+    function isOwner(uid) {
+      return isAuthenticated() && request.auth.uid == uid;
     }
 
-    function isActiveEditor(userId) {
-      return isActiveCollaborator(userId)
-        && firestore.get(collaboratorPath(userId)).data.role == 'editor';
+    function collaboratorDoc(uid) {
+      return /databases/(default)/documents/users/$(uid)/collaborators/$(request.auth.token.email.lower());
+    }
+
+    function isActiveCollaborator(uid) {
+      return isAuthenticated()
+        && request.auth.token.email != null
+        && firestore.exists(collaboratorDoc(uid))
+        && firestore.get(collaboratorDoc(uid)).data.status == 'active';
+    }
+
+    function isActiveEditor(uid) {
+      return isActiveCollaborator(uid)
+        && firestore.get(collaboratorDoc(uid)).data.role == 'editor';
+    }
+
+    function isValidFileSize() {
+      return request.resource.size <= 10 * 1024 * 1024; // Máximo 10MB
+    }
+
+    function isValidContentType() {
+      return request.resource.contentType.matches('image/(jpeg|png|webp)|application/pdf');
     }
 
     // ============================================================
-    // BASE: denegar todo por defecto — seguridad por omisión
+    // SEGURIDAD POR DEFECTO: Denegar todo acceso no explícito
     // ============================================================
     match /{allPaths=**} {
       allow read, write: if false;
     }
 
     // ============================================================
-    // COMPROBANTES DEL USUARIO
-    // Ruta: users/{userId}/comprobantes/{modulo}/{archivo}
-    // El dueño siempre tiene acceso total. Los colaboradores activos con
-    // rol 'editor' pueden subir/eliminar; los colaboradores 'viewer' solo leen.
-    // El estado del colaborador se valida contra Firestore
-    // (users/{userId}/collaborators/{email}).
+    // COMPROBANTES: /users/{uid}/comprobantes/{modulo}/{archivo}
+    // 1. Solo usuarios autenticados (dueño o colaboradores)
+    // 2. Solo ruta designada
+    // 3. Tipos MIME permitidos: jpeg, png, webp, pdf
+    // 4. Tamaño máximo: 10MB
     // ============================================================
-    match /users/{userId}/comprobantes/{modulo}/{fileName} {
-      allow read: if request.auth != null
-                  && (request.auth.uid == userId || isActiveCollaborator(userId));
+    match /users/{uid}/comprobantes/{modulo}/{archivo} {
+      allow read: if isOwner(uid) || isActiveCollaborator(uid);
 
-      allow create: if request.auth != null
-                    && (request.auth.uid == userId || isActiveEditor(userId))
-                    && request.resource.size < 10 * 1024 * 1024
-                    && request.resource.contentType.matches('image/(jpeg|png|webp)|application/pdf');
+      allow create, update: if (isOwner(uid) || isActiveEditor(uid))
+                            && isValidFileSize()
+                            && isValidContentType();
 
-      allow delete: if request.auth != null
-                    && (request.auth.uid == userId || isActiveEditor(userId));
+      allow delete: if isOwner(uid) || isActiveEditor(uid);
     }
   }
 }
+
