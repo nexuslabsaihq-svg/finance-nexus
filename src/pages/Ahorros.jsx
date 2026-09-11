@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAppData } from '../context/AppDataContext';
+import { formatMiles, parseMiles } from '../utils/chileData';
 
 export default function Ahorros() {
   const { ahorros, setAhorros } = useAppData();
@@ -130,10 +131,10 @@ export default function Ahorros() {
             </select>
           </div>
           <div className="fgrp"><label className="flbl">Monto Objetivo (CLP)</label>
-            <input className="finp" type="number" placeholder="$0" value={form.meta} onChange={e => setForm({...form, meta: e.target.value})} />
+            <input className="finp" type="text" placeholder="$0" value={formatMiles(form.meta)} onChange={e => setForm({...form, meta: parseMiles(e.target.value)})} />
           </div>
           <div className="fgrp"><label className="flbl">Contribución Mensual</label>
-            <input className="finp" type="number" placeholder="$0" value={form.aporte} onChange={e => setForm({...form, aporte: e.target.value})} />
+            <input className="finp" type="text" placeholder="$0" value={formatMiles(form.aporte)} onChange={e => setForm({...form, aporte: parseMiles(e.target.value)})} />
           </div>
           <div className="fgrp"><label className="flbl">Fecha Objetivo</label>
             <input className="finp" type="date" value={form.fecha} onChange={e => setForm({...form, fecha: e.target.value})} />

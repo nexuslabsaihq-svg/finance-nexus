@@ -3,7 +3,7 @@ import { useAppData } from '../context/AppDataContext';
 import { MONTH_NAMES } from '../utils/period';
 
 export default function Header() {
-  const { period, setPeriod, usuario, logout, setActivePage, notificaciones, setNotificaciones, ingresos, gastos, authUser } = useAppData();
+  const { privacyMode, setPrivacyMode, period, setPeriod, usuario, logout, setActivePage, notificaciones, setNotificaciones, ingresos, gastos, authUser, workspaces, activeUid, isOwnerWorkspace, isViewer, switchWorkspace, pendingInvitations, configuracion, setConfiguracion } = useAppData();
   
   const [notifOpen, setNotifOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -48,6 +48,29 @@ export default function Header() {
           ☰
         </button>
         <div className="greeting">Hola, <span>{authUser?.displayName?.split(' ')[0] || 'Usuario'}</span> 👋</div>
+        {!isOwnerWorkspace && (
+          <span className="badge bp" title="Estás viendo una cuenta colaborativa">
+            🤝 {workspaces.find(w => w.uid === activeUid)?.label || 'Cuenta compartida'} {isViewer ? '· Solo Lectura' : '· Editor'}
+          </span>
+        )}
+        {workspaces.length > 1 && (
+          <select
+            className="fsel"
+            style={{ width: 'auto', fontSize: '11px', padding: '3px 6px' }}
+            value={activeUid || ''}
+            onChange={(e) => switchWorkspace(e.target.value)}
+            title="Cambiar espacio de trabajo"
+          >
+            {workspaces.map(w => (
+              <option key={w.uid} value={w.uid}>{w.isOwner ? 'Mi cuenta' : w.label}</option>
+            ))}
+          </select>
+        )}
+        {pendingInvitations.length > 0 && (
+          <span className="badge bg" style={{cursor:'pointer'}} onClick={() => setActivePage('perfil')} title="Tienes invitaciones pendientes">
+            ✉️ {pendingInvitations.length}
+          </span>
+        )}
       </div>
       
       <div className="search-wrap" style={{ position: 'relative' }}>
@@ -85,6 +108,16 @@ export default function Header() {
           </select>
         </div>
         
+        {/* CAPA DE PRIVACIDAD: Botón anti-mirones */}
+        <button 
+          className="hbtn" 
+          onClick={() => setPrivacyMode(!privacyMode)} 
+          title="Modo Privacidad (Ocultar Saldos)"
+          style={{ color: privacyMode ? 'var(--blue)' : 'var(--text2)' }}
+        >
+          {privacyMode ? '👁️‍🗨️' : '👁️'}
+        </button>
+
         <button className="hbtn" onClick={() => {
           const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
           document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
@@ -92,7 +125,18 @@ export default function Header() {
           🌓
         </button>
         
-        <button className="hbtn" style={{ fontSize: 11, fontWeight: 700, fontFamily: 'var(--font)' }}>CLP</button>
+        <select 
+          className="hbtn" 
+          value={configuracion?.moneda || 'CLP'} 
+          onChange={(e) => setConfiguracion({ ...configuracion, moneda: e.target.value })}
+          style={{ fontSize: 11, fontWeight: 700, fontFamily: 'var(--font)', appearance: 'none', cursor: 'pointer', outline: 'none' }}
+          title="Moneda principal"
+        >
+          <option value="CLP">CLP</option>
+          <option value="USD">USD</option>
+          <option value="EUR">EUR</option>
+          <option value="UF">UF</option>
+        </select>
         
         {/* NOTIFICATIONS */}
         <div ref={notifRef} style={{ position: 'relative' }}>
@@ -124,14 +168,14 @@ export default function Header() {
         {/* USER MENU */}
         <div ref={userRef} style={{ position: 'relative' }}>
           <div className="user-menu-btn" onClick={() => { setUserMenuOpen(!userMenuOpen); setNotifOpen(false); }} title={`${authUser?.displayName || 'Usuario'}\n${authUser?.email || ''}`}>
-            <div className="uma">{authUser?.photoURL ? <img src={authUser.photoURL} style={{width:'100%', height:'100%', borderRadius:'50%'}}/> : (authUser?.displayName?.[0] || 'U')}<span className="uma-online"></span></div>
+            <div className="uma">{authUser?.photoURL ? <img src={authUser.photoURL} referrerPolicy="no-referrer" style={{width:'100%', height:'100%', borderRadius:'50%'}}/> : (authUser?.displayName?.[0] || 'U')}<span className="uma-online"></span></div>
             <span className="uma-name">{authUser?.displayName?.split(' ')[0] || 'Usuario'}</span>
             <span className="uma-arrow">▾</span>
           </div>
           <div className={`user-dropdown ${userMenuOpen ? 'open' : ''}`}>
             <div className="ud-header">
               <div className="ud-avatar-wrap" onClick={() => { setUserMenuOpen(false); setActivePage('perfil'); }}>
-                <div className="ud-avatar">{authUser?.photoURL ? <img src={authUser.photoURL} style={{width:'100%', height:'100%', borderRadius:'50%'}}/> : (authUser?.displayName?.[0] || 'U')}</div>
+                <div className="ud-avatar">{authUser?.photoURL ? <img src={authUser.photoURL} referrerPolicy="no-referrer" style={{width:'100%', height:'100%', borderRadius:'50%'}}/> : (authUser?.displayName?.[0] || 'U')}</div>
               </div>
               <div>
                 <div className="ud-name">{authUser?.displayName || 'Usuario'}</div>

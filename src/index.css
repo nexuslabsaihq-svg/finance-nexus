@@ -15,22 +15,22 @@
 }
 
 [data-theme='light'] {
-  --bg: #F4F7FB;
-  --surface: #FFFFFF;
-  --surface2: #F8FAFC;
-  --surface3: #F1F5F9;
+  --bg: #FDFBF7;
+  --surface: #F8F5EE;
+  --surface2: #F2EBE1;
+  --surface3: #EBE1D4;
   --glass: rgba(0, 0, 0, 0.02);
   --glass2: rgba(0, 0, 0, 0.04);
   --glass3: rgba(0, 0, 0, 0.08);
-  --text: #0F172A;
-  --text2: #475569;
-  --text3: #64748B;
-  --text4: #94A3B8;
-  --border: rgba(15, 23, 42, 0.1);
-  --border2: rgba(15, 23, 42, 0.06);
-  --border3: rgba(15, 23, 42, 0.03);
-  --shadow: 0 4px 24px rgba(15, 23, 42, 0.06);
-  --shadow2: 0 8px 40px rgba(15, 23, 42, 0.1);
+  --text: #2C2825;
+  --text2: #5C554D;
+  --text3: #8C847A;
+  --text4: #B8B2A9;
+  --border: rgba(44, 40, 37, 0.1);
+  --border2: rgba(44, 40, 37, 0.06);
+  --border3: rgba(44, 40, 37, 0.03);
+  --shadow: 0 4px 24px rgba(44, 40, 37, 0.06);
+  --shadow2: 0 8px 40px rgba(44, 40, 37, 0.1);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{font-size:14px;scroll-behavior:smooth}
@@ -60,7 +60,9 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .app{display:grid;grid-template-columns:220px 1fr;grid-template-rows:64px 1fr;height:100vh;position:relative;z-index:1}
 
 /* ════ SIDEBAR ════ */
-.sidebar{grid-row:1/-1;background:linear-gradient(180deg,var(--surface) 0%,#0E1320 100%);border-right:1px solid var(--border);padding:0 10px 20px;display:flex;flex-direction:column;overflow-y:auto;scrollbar-width:none;position:relative}
+.sidebar{grid-row:1/-1;background:linear-gradient(180deg,var(--surface) 0%,#0E1320 100%);border-right:1px solid var(--border);padding:0 10px 20px;display:flex;flex-direction:column;position:relative}
+.sidebar-scrollable{flex-grow:1;overflow-y:auto;scrollbar-width:none;}
+.sidebar-scrollable::-webkit-scrollbar{display:none}
 .sidebar::after{content:'';position:absolute;top:0;right:0;width:1px;height:100%;background:linear-gradient(180deg,transparent,var(--orange),transparent);opacity:0.3}
 .sidebar::-webkit-scrollbar{display:none}
 .logo-wrap{padding:18px 10px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);margin-bottom:14px;flex-shrink:0;position:relative}
@@ -425,3 +427,25 @@ tr:hover td{background:var(--glass);cursor:pointer}
   color: var(--text);
   cursor: pointer;
 }
+/* ========================================= */
+/* MODO PRIVACIDAD (ANTI-SHOULDER SURFING)   */
+/* ========================================= */
+body.privacy-mode .sc-val,
+body.privacy-mode .tdr,
+body.privacy-mode [style*="--mono"],
+body.privacy-mode .chart-container,
+body.privacy-mode .recharts-wrapper {
+  filter: blur(6px);
+  opacity: 0.6;
+  pointer-events: none;
+  user-select: none;
+  transition: filter 0.3s ease, opacity 0.3s ease;
+}
+body.privacy-mode .sc-val:hover,
+body.privacy-mode .tdr:hover,
+body.privacy-mode [style*="--mono"]:hover {
+  filter: blur(0px);
+  opacity: 1;
+  transition: filter 0.2s ease;
+}
+

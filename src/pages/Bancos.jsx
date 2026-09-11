@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useAppData } from '../context/AppDataContext';
+import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
+import { BANCOS_CHILE, formatMiles, parseMiles } from '../utils/chileData';
 
 export default function Bancos() {
   const { bancos, setBancos, authUser } = useAppData();
@@ -82,23 +84,61 @@ export default function Bancos() {
       
       <div className="card">
         <div className="card-hdr"><div className="card-title">Distribución de Fondos</div></div>
-        <div style={{display:'flex', width:'100%', height:'24px', borderRadius:'12px', overflow:'hidden', marginTop:'10px'}}>
-          {bancos.length === 0 && <div style={{width:'100%', background:'var(--surface2)'}}></div>}
-          {bancos.map((b, i) => {
-            const pct = total > 0 ? (b.saldo / total) * 100 : 0;
-            if (pct <= 0) return null;
-            return <div key={b.id} style={{width: `${pct}%`, background: colors[i % colors.length].text, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'10px', color:'#000', fontWeight:'bold', overflow:'hidden', whiteSpace:'nowrap'}} title={`${b.nombre} - ${pct.toFixed(1)}%`}>
-              {pct > 10 ? `${pct.toFixed(0)}%` : ''}
+        
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '20px', marginTop: '10px' }}>
+          {/* Gráfico Donut */}
+          <div style={{ width: '200px', height: '200px', flexShrink: 0 }}>
+            {bancos.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={bancos.map(b => ({ name: b.nombre, value: Number(b.saldo) }))}
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    {bancos.map((b, index) => (
+                      <Cell key={`cell-${index}`} fill={colors[index % colors.length].text} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip 
+                    formatter={(value) => `$${value.toLocaleString()}`}
+                    contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px' }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div style={{width:'100%', height:'100%', background:'var(--surface2)', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center'}}>
+                <span style={{color:'var(--text2)', fontSize:'12px'}}>Sin datos</span>
+              </div>
+            )}
+          </div>
+
+          {/* Leyenda y Barra Horizontal */}
+          <div style={{ flex: 1, minWidth: '250px' }}>
+            <div style={{display:'flex', width:'100%', height:'24px', borderRadius:'12px', overflow:'hidden', marginBottom:'15px'}}>
+              {bancos.length === 0 && <div style={{width:'100%', background:'var(--surface2)'}}></div>}
+              {bancos.map((b, i) => {
+                const pct = total > 0 ? (b.saldo / total) * 100 : 0;
+                if (pct <= 0) return null;
+                return <div key={b.id} style={{width: `${pct}%`, background: colors[i % colors.length].text, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'10px', color:'#000', fontWeight:'bold', overflow:'hidden', whiteSpace:'nowrap'}} title={`${b.nombre} - ${pct.toFixed(1)}%`}>
+                  {pct > 10 ? `${pct.toFixed(0)}%` : ''}
+                </div>
+              })}
             </div>
-          })}
-        </div>
-        <div style={{display:'flex', flexWrap:'wrap', gap:'15px', marginTop:'15px'}}>
-          {bancos.map((b, i) => (
-             <div key={b.id} style={{display:'flex', alignItems:'center', gap:'6px', fontSize:'12px'}}>
-               <div style={{width:'10px', height:'10px', borderRadius:'50%', background: colors[i % colors.length].text}}></div>
-               <span>{b.nombre}</span>
-             </div>
-          ))}
+            
+            <div style={{display:'flex', flexWrap:'wrap', gap:'15px'}}>
+              {bancos.map((b, i) => (
+                <div key={b.id} style={{display:'flex', alignItems:'center', gap:'6px', fontSize:'12px'}}>
+                  <div style={{width:'10px', height:'10px', borderRadius:'50%', background: colors[i % colors.length].text}}></div>
+                  <span>{b.nombre}</span>
+                  <span style={{color: 'var(--text2)'}}>({total > 0 ? ((b.saldo / total) * 100).toFixed(1) : 0}%)</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
       
@@ -125,21 +165,35 @@ export default function Bancos() {
       <div className="card">
         <div className="card-hdr"><div className="card-title">{editId ? '✏️ Editar Cuenta' : '➕ Agregar Nueva Cuenta'}</div></div>
         <div className="fg fg2">
-          <div className="fgrp"><label className="flbl">Banco</label>
+          <div className="fgrp"><label className="flbl">Banco / Institución</label>
             <select className="fsel" value={form.nombre} onChange={e => setForm({...form, nombre: e.target.value})}>
-              <option>Banco Santander</option><option>BCI</option><option>BancoEstado</option><option>Banco de Chile</option><option>Itaú</option><option>Scotiabank</option><option>Falabella</option><option>Efectivo</option><option>Otro</option>
+              {BANCOS_CHILE.map(b => (
+                <option key={b.id} value={b.name}>{b.logo} {b.name}</option>
+              ))}
+              <option value="Efectivo">💵 Efectivo</option>
+              <option value="Otro">Otro</option>
             </select>
           </div>
           <div className="fgrp"><label className="flbl">Tipo de Cuenta</label>
             <select className="fsel" value={form.tipo} onChange={e => setForm({...form, tipo: e.target.value})}>
-              <option>Cuenta Corriente</option><option>Cuenta Ahorros</option><option>Cuenta Vista</option><option>Tarjeta Crédito</option><option>Efectivo</option>
+              <option>Cuenta Corriente</option>
+              <option>Cuenta Ahorro</option>
+              <option>Cuenta Vista (RUT, MACH, Tenpo)</option>
+              <option>Línea de Crédito</option>
+              <option>Efectivo</option>
             </select>
           </div>
           <div className="fgrp"><label className="flbl">Número de Cuenta</label>
             <input className="finp" placeholder="Opcional..." value={form.numero} onChange={e => setForm({...form, numero: e.target.value})} />
           </div>
           <div className="fgrp"><label className="flbl">Saldo Actual (CLP)</label>
-            <input className="finp" type="number" placeholder="$0" value={form.saldo} onChange={e => setForm({...form, saldo: e.target.value})} />
+            <input 
+              className="finp" 
+              type="text" 
+              placeholder="$0" 
+              value={formatMiles(form.saldo)} 
+              onChange={e => setForm({...form, saldo: parseMiles(e.target.value)})} 
+            />
           </div>
           <div className="fgrp"><label className="flbl">Moneda</label>
             <select className="fsel" value={form.moneda} onChange={e => setForm({...form, moneda: e.target.value})}>

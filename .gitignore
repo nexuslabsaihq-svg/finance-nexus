@@ -31,3 +31,16 @@ dist-ssr
 .env.production
 .env.staging
 .env.*.local
+
+# Scripts de prueba locales
+test-*.cjs
+
+# Carpetas temporales y backups
+src_backup_*/
+.vercel/
+
+# Archivos de service account de Firebase
+*serviceAccount*.json
+*-adminsdk-*.json
+*.pem
+*.key

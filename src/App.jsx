@@ -22,8 +22,10 @@ import Landing from './pages/Landing';
 
 import Documentos from './pages/Documentos';
 import FlujoCaja from './pages/FlujoCaja';
+import ConfigSetup from './pages/ConfigSetup';
 
 import { useAppData } from './context/AppDataContext';
+import TourGuide from './components/TourGuide';
 
 const Bubbles = () => (
   <div className="bubbles">
@@ -82,6 +84,7 @@ function App() {
 
   return (
     <>
+      <TourGuide />
       <Bubbles />
       <div className="app">
         <div className="sidebar-overlay" onClick={() => document.body.classList.remove('sidebar-open')}></div>

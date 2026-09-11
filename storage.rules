@@ -3,6 +3,21 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
 
+    function collaboratorPath(userId) {
+      return /databases/(default)/documents/users/$(userId)/collaborators/$(request.auth.token.email.lower());
+    }
+
+    function isActiveCollaborator(userId) {
+      return request.auth.token.email != null
+        && firestore.exists(collaboratorPath(userId))
+        && firestore.get(collaboratorPath(userId)).data.status == 'active';
+    }
+
+    function isActiveEditor(userId) {
+      return isActiveCollaborator(userId)
+        && firestore.get(collaboratorPath(userId)).data.role == 'editor';
+    }
+
     // ============================================================
     // BASE: denegar todo por defecto — seguridad por omisión
     // ============================================================
@@ -13,17 +28,22 @@ service firebase.storage {
     // ============================================================
     // COMPROBANTES DEL USUARIO
     // Ruta: users/{userId}/comprobantes/{modulo}/{archivo}
-    // Solo el dueño autenticado puede leer, subir o eliminar sus archivos.
+    // El dueño siempre tiene acceso total. Los colaboradores activos con
+    // rol 'editor' pueden subir/eliminar; los colaboradores 'viewer' solo leen.
+    // El estado del colaborador se valida contra Firestore
+    // (users/{userId}/collaborators/{email}).
     // ============================================================
     match /users/{userId}/comprobantes/{modulo}/{fileName} {
-      allow read: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null
+                  && (request.auth.uid == userId || isActiveCollaborator(userId));
 
       allow create: if request.auth != null
-                    && request.auth.uid == userId
+                    && (request.auth.uid == userId || isActiveEditor(userId))
                     && request.resource.size < 10 * 1024 * 1024
                     && request.resource.contentType.matches('image/(jpeg|png|webp)|application/pdf');
 
-      allow delete: if request.auth != null && request.auth.uid == userId;
+      allow delete: if request.auth != null
+                    && (request.auth.uid == userId || isActiveEditor(userId));
     }
   }
 }

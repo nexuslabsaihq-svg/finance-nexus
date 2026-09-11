@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAppData } from '../context/AppDataContext';
 import { getPeriodPrefix } from '../utils/period';
+import * as XLSX from 'xlsx';
 
 export default function Flujo({ period }) {
   const { ingresos, gastos } = useAppData();
@@ -14,6 +15,41 @@ export default function Flujo({ period }) {
   const totalGastos = gastosMes.reduce((sum, g) => sum + Number(g.monto), 0);
   const flujoNeto = totalIngresos - totalGastos;
 
+  const exportarCSVProfesional = () => {
+    // Agrupar por categoría
+    const inCat = {};
+    ingresosMes.forEach(i => { inCat[i.cat] = (inCat[i.cat] || 0) + Number(i.monto); });
+    
+    const outCat = {};
+    gastosMes.forEach(g => { outCat[g.cat] = (outCat[g.cat] || 0) + Number(g.monto); });
+
+    const rows = [
+      { Concepto: `ESTADO DE FLUJOS DE EFECTIVO - ${period.toUpperCase()} 2026`, Monto: '' },
+      { Concepto: '', Monto: '' },
+      { Concepto: 'INGRESOS (Entradas Operativas)', Monto: '' }
+    ];
+
+    Object.entries(inCat).forEach(([cat, monto]) => {
+      rows.push({ Concepto: `   ${cat}`, Monto: monto });
+    });
+    rows.push({ Concepto: 'TOTAL INGRESOS', Monto: totalIngresos });
+    rows.push({ Concepto: '', Monto: '' });
+    
+    rows.push({ Concepto: 'EGRESOS (Salidas Operativas)', Monto: '' });
+    Object.entries(outCat).forEach(([cat, monto]) => {
+      rows.push({ Concepto: `   ${cat}`, Monto: -monto });
+    });
+    rows.push({ Concepto: 'TOTAL EGRESOS', Monto: -totalGastos });
+    rows.push({ Concepto: '', Monto: '' });
+    
+    rows.push({ Concepto: 'FLUJO DE CAJA NETO DEL PERIODO', Monto: flujoNeto });
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Flujo de Caja");
+    XLSX.writeFile(wb, `Flujo_Caja_${period}.csv`);
+  };
+
   const todasTransacciones = [
     ...ingresosMes.map(i => ({...i, tipo: 'Ingreso'})),
     ...gastosMes.map(g => ({...g, tipo: 'Gasto'}))
@@ -23,10 +59,13 @@ export default function Flujo({ period }) {
     <div className="page active" style={{ display: 'flex', flexDirection: 'column' }}>
       <div className="page-hdr">
         <div>
-          <div className="page-title">🌊 Flujo de Caja</div>
-          <div className="page-sub">Análisis de liquidez y movimientos netos · {period} 2025</div>
+          <div className="page-title">📊 Flujo de Caja</div>
+          <div className="page-sub">Análisis de liquidez y movimientos netos — {period} 2026</div>
         </div>
-        <button className="btn btn-gh btn-sm" onClick={() => window.print()}>🖨️ Exportar PDF</button>
+        <div style={{display:'flex', gap:'8px'}}>
+          <button className="btn btn-gh btn-sm" onClick={exportarCSVProfesional}>📄 Exportar CSV (Académico)</button>
+          <button className="btn btn-gh btn-sm" onClick={() => window.print()}>🖨️ Imprimir / PDF</button>
+        </div>
       </div>
 
       <div className="g3" style={{ marginBottom: '16px' }}>

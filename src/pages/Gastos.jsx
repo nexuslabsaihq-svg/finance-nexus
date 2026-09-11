@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useAppData } from '../context/AppDataContext';
+import { formatMiles, parseMiles } from '../utils/chileData';
 import * as XLSX from 'xlsx';
 import ComprobanteUploader from '../components/ComprobanteUploader';
 import { deleteComprobante } from '../firebase/storage';
@@ -43,9 +44,11 @@ export default function Gastos() {
 
   const handleCreate = () => {
     if(!form.desc || !form.monto) return;
-    const newRecord = { ...form, id: Date.now().toString(), monto: Number(form.monto), comprobante: comprobante || null };
+    const finalCat = form.cat === 'Otro' && form.catCustom ? form.catCustom : form.cat;
+    const newRecord = { ...form, cat: finalCat, id: Date.now().toString(), monto: Number(form.monto), comprobante: comprobante || null };
+    delete newRecord.catCustom; // Clean up
     setGastos([newRecord, ...gastos]);
-    setForm({ desc: '', cat: configuracion?.categorias?.[0] || 'Alimentación', monto: '', fecha: new Date().toISOString().split('T')[0], cuenta: bancos?.[0]?.nombre || 'Efectivo', recurrente: 'No' });
+    setForm({ desc: '', cat: configuracion?.categorias?.[0] || 'Alimentación', catCustom: '', monto: '', fecha: new Date().toISOString().split('T')[0], cuenta: bancos?.[0]?.nombre || 'Efectivo', recurrente: 'No' });
     setComprobante(null);
   };
 
@@ -93,9 +96,16 @@ export default function Gastos() {
               <label className="flbl">Categoría</label>
               <select className="fsel" value={form.cat} onChange={e=>setForm({...form, cat:e.target.value})}>
                 {configuracion?.categorias?.map(c => <option key={c}>{c}</option>)}
+                <option value="Otro">Otro (Especificar)</option>
               </select>
+              {form.cat === 'Otro' && (
+                <input className="finp" style={{marginTop: '8px'}} placeholder="Escribe la categoría..." value={form.catCustom || ''} onChange={e => setForm({...form, catCustom: e.target.value})} />
+              )}
             </div>
-            <div className="fgrp"><label className="flbl">Monto (CLP)</label><input className="finp" type="number" placeholder="$0" value={form.monto} onChange={e=>setForm({...form, monto:e.target.value})}/></div>
+            <div className="fgrp">
+              <label className="flbl">Monto (CLP)</label>
+              <input className="finp" type="text" placeholder="$0" value={formatMiles(form.monto)} onChange={e=>setForm({...form, monto:parseMiles(e.target.value)})}/>
+            </div>
             <div className="fgrp"><label className="flbl">Fecha</label><input className="finp" type="date" value={form.fecha} onChange={e=>setForm({...form, fecha:e.target.value})}/></div>
             <div className="fgrp">
               <label className="flbl">Cuenta / Banco</label>

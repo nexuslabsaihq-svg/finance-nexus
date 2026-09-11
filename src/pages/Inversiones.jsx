@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useAppData } from '../context/AppDataContext';
+import { INSTITUCIONES_INVERSION_CHILE, TIPOS_INVERSION, formatMiles, parseMiles } from '../utils/chileData';
 
 export default function Inversiones() {
   const { inversiones, setInversiones } = useAppData();
 
   const [form, setForm] = useState({
     nombre: '',
+    tipo: TIPOS_INVERSION[0],
     institucion: '',
     invertido: '',
     actual: '',
@@ -116,25 +118,39 @@ export default function Inversiones() {
       <div className="card">
         <div className="card-hdr"><div className="card-title">➕ Nueva Inversión</div></div>
         <div className="fg fg2">
-          <div className="fgrp"><label className="flbl">Nombre del Instrumento</label>
-            <input className="finp" placeholder="Ej: Fondo Mutuo A" value={form.nombre} onChange={e => setForm({...form, nombre: e.target.value})} />
+          <div className="fgrp">
+            <label className="flbl">Nombre del Instrumento</label>
+            <input className="finp" placeholder="Ej: Fondo Riesgo Medio" value={form.nombre} onChange={e => setForm({...form, nombre: e.target.value})} />
           </div>
-          <div className="fgrp"><label className="flbl">Institución</label>
-            <input className="finp" placeholder="Ej: Banco Santander" value={form.institucion} onChange={e => setForm({...form, institucion: e.target.value})} />
+          <div className="fgrp">
+            <label className="flbl">Tipo de Inversión</label>
+            <select className="fsel" value={form.tipo} onChange={e => setForm({...form, tipo: e.target.value})}>
+              {TIPOS_INVERSION.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
           </div>
-          <div className="fgrp"><label className="flbl">Monto Invertido (CLP)</label>
-            <input className="finp" type="number" placeholder="$0" value={form.invertido} onChange={e => setForm({...form, invertido: e.target.value})} />
+          <div className="fgrp">
+            <label className="flbl">Institución (Broker / Banco)</label>
+            <select className="fsel" value={form.institucion} onChange={e => setForm({...form, institucion: e.target.value})}>
+              <option value="">Selecciona...</option>
+              {INSTITUCIONES_INVERSION_CHILE.map(i => <option key={i} value={i}>{i}</option>)}
+            </select>
           </div>
-          <div className="fgrp"><label className="flbl">Valor Actual (CLP)</label>
-            <input className="finp" type="number" placeholder="$0" value={form.actual} onChange={e => setForm({...form, actual: e.target.value})} />
+          <div className="fgrp">
+            <label className="flbl" title="Dinero total de tu bolsillo que has depositado">Monto Invertido (CLP) <span style={{cursor:'help', color:'var(--orange)'}}>(?)</span></label>
+            <input className="finp" type="text" placeholder="$0" value={formatMiles(form.invertido)} onChange={e => setForm({...form, invertido: parseMiles(e.target.value)})} />
           </div>
-          <div className="fgrp"><label className="flbl">Aporte Mensual (CLP)</label>
-            <input className="finp" type="number" placeholder="$0" value={form.aporte} onChange={e => setForm({...form, aporte: e.target.value})} />
+          <div className="fgrp">
+            <label className="flbl" title="Lo que vale hoy según la aplicación del broker">Valor Actual (CLP) <span style={{cursor:'help', color:'var(--orange)'}}>(?)</span></label>
+            <input className="finp" type="text" placeholder="$0" value={formatMiles(form.actual)} onChange={e => setForm({...form, actual: parseMiles(e.target.value)})} />
+          </div>
+          <div className="fgrp">
+            <label className="flbl" title="Dinero que metes extra cada mes">Aporte Mensual (CLP) <span style={{cursor:'help', color:'var(--orange)'}}>(?)</span></label>
+            <input className="finp" type="text" placeholder="$0" value={formatMiles(form.aporte)} onChange={e => setForm({...form, aporte: parseMiles(e.target.value)})} />
           </div>
         </div>
         <div style={{marginTop:"14px",display:"flex",gap:"8px"}}>
           <button className="btn btn-o" onClick={handleCreate}>💾 Crear Inversión</button>
-          <button className="btn btn-gh" onClick={() => setForm({nombre:'',institucion:'',invertido:'',actual:'',aporte:''})}>Cancelar</button>
+          <button className="btn btn-gh" onClick={() => setForm({nombre:'',tipo:TIPOS_INVERSION[0]||'',institucion:'',invertido:'',actual:'',aporte:''})}>Cancelar</button>
         </div>
       </div>
     </div>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAppData } from '../context/AppDataContext';
+import { formatMiles, parseMiles } from '../utils/chileData';
 import * as XLSX from 'xlsx';
 
 export default function Transferencias() {
@@ -126,7 +127,7 @@ export default function Transferencias() {
               </select>
             </div>
             <div className="fg fg2">
-              <div className="fgrp"><label className="flbl">Monto (CLP)</label><input className="finp" type="number" placeholder="$0" value={form.monto} onChange={e => setForm({...form, monto: e.target.value})} /></div>
+              <div className="fgrp"><label className="flbl">Monto (CLP)</label><input className="finp" type="text" placeholder="$0" value={formatMiles(form.monto)} onChange={e => setForm({...form, monto: parseMiles(e.target.value)})} /></div>
               <div className="fgrp"><label className="flbl">Fecha</label><input className="finp" type="date" value={form.fecha} onChange={e => setForm({...form, fecha: e.target.value})} /></div>
             </div>
             <div className="fgrp"><label className="flbl">Descripción</label><input className="finp" placeholder="Motivo de la transferencia..." value={form.desc} onChange={e => setForm({...form, desc: e.target.value})} /></div>

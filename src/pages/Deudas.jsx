@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAppData } from '../context/AppDataContext';
+import { BANCOS_CHILE, TARJETAS_CREDITO_CHILE, formatMiles, parseMiles } from '../utils/chileData';
 
 const getBalance = (debt) => Number(debt.balance ?? debt.monto) || 0;
 
@@ -142,22 +143,39 @@ export default function Deudas() {
       <div className="card">
         <div className="card-hdr"><div className="card-title">➕ Registrar Nueva Deuda</div></div>
         <div className="fg fg2">
-          <div className="fgrp"><label className="flbl">Nombre</label>
+          <div className="fgrp">
+            <label className="flbl">Nombre (Ej: Avance, CAE, Automotriz)</label>
             <input className="finp" placeholder="Ej: Tarjeta de Crédito" value={form.nombre} onChange={e => setForm({...form, nombre: e.target.value})} />
           </div>
-          <div className="fgrp"><label className="flbl">Institución</label>
-            <input className="finp" placeholder="Ej: Banco Santander" value={form.institucion} onChange={e => setForm({...form, institucion: e.target.value})} />
+          <div className="fgrp">
+            <label className="flbl">Institución (Banco o Casa Comercial)</label>
+            <select className="fsel" value={form.institucion} onChange={e => setForm({...form, institucion: e.target.value})}>
+              <option value="">Selecciona...</option>
+              <optgroup label="Bancos">
+                {BANCOS_CHILE.map(b => <option key={b.id} value={b.name}>{b.name}</option>)}
+              </optgroup>
+              <optgroup label="Tarjetas">
+                {TARJETAS_CREDITO_CHILE.map(t => <option key={t} value={t}>{t}</option>)}
+              </optgroup>
+            </select>
           </div>
-          <div className="fgrp"><label className="flbl">Balance Pendiente (CLP)</label>
-            <input className="finp" type="number" placeholder="$0" value={form.balance} onChange={e => setForm({...form, balance: e.target.value})} />
+          <div className="fgrp">
+            <label className="flbl" title="La cantidad total que aún debes pagar">Balance Pendiente (CLP) <span style={{cursor:'help', color:'var(--orange)'}}>(?)</span></label>
+            <input className="finp" type="text" placeholder="$0" value={formatMiles(form.balance)} onChange={e => setForm({...form, balance: parseMiles(e.target.value)})} />
           </div>
-          <div className="fgrp"><label className="flbl">Pago Mensual (CLP)</label>
-            <input className="finp" type="number" placeholder="$0" value={form.pagoMensual} onChange={e => setForm({...form, pagoMensual: e.target.value})} />
+          <div className="fgrp">
+            <label className="flbl" title="La cuota o pago mínimo que haces al mes">Pago Mensual (CLP) <span style={{cursor:'help', color:'var(--orange)'}}>(?)</span></label>
+            <input className="finp" type="text" placeholder="$0" value={formatMiles(form.pagoMensual)} onChange={e => setForm({...form, pagoMensual: parseMiles(e.target.value)})} />
           </div>
-          <div className="fgrp"><label className="flbl">Tasa Anual (%)</label>
-            <input className="finp" type="number" step="0.1" placeholder="Ej: 18.5" value={form.tasa} onChange={e => setForm({...form, tasa: e.target.value})} />
+          <div className="fgrp">
+            <label className="flbl" title="El Costo Anual Equivalente o la Tasa de Interés Anual">Tasa Anual (CAE) <span style={{cursor:'help', color:'var(--orange)'}}>(?)</span></label>
+            <div style={{position:'relative'}}>
+              <input className="finp" type="number" step="0.1" placeholder="Ej: 18.5" value={form.tasa} onChange={e => setForm({...form, tasa: e.target.value})} style={{paddingRight: '25px'}} />
+              <span style={{position:'absolute', right:'10px', top:'50%', transform:'translateY(-50%)', color:'var(--text2)', pointerEvents:'none'}}>%</span>
+            </div>
           </div>
-          <div className="fgrp"><label className="flbl">Próximo Vencimiento</label>
+          <div className="fgrp">
+            <label className="flbl">Próximo Vencimiento</label>
             <input className="finp" type="date" value={form.vencimiento} onChange={e => setForm({...form, vencimiento: e.target.value})} />
           </div>
         </div>

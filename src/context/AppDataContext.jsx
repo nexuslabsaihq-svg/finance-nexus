@@ -1,50 +1,158 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useState, useEffect, useContext, useCallback, useMemo } from 'react';
 import { auth, db, provider, HasKeys } from '../firebase/config';
 import { onAuthStateChanged, signInWithPopup, signOut, getRedirectResult } from "firebase/auth";
-import { doc, setDoc, onSnapshot, collectionGroup, query, where, getDocs } from "firebase/firestore";
+import { doc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, collectionGroup, query, where } from "firebase/firestore";
 
 // Captura silenciosamente el resultado fantasma de un redirect anterior desde la barra de direcciones para evitar el error de 'missing initial state'
 getRedirectResult(auth).catch(() => {});
-
 
 const AppDataContext = createContext();
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const useAppData = () => useContext(AppDataContext);
 
+// ============================================================
+// CUENTAS COLABORATIVAS — roles y utilidades
+// ============================================================
+const ROLES = { EDITOR: 'editor', VIEWER: 'viewer' };
+const WORKSPACE_STORAGE_PREFIX = 'fn_active_workspace_';
+const normalizeEmail = (email) => (email || '').trim().toLowerCase();
+
 export const AppDataProvider = ({ children }) => {
   const [activePage, setActivePage] = useState('dashboard');
   const [period, setPeriod] = useState('Marzo');
-  
+
   const [authUser, setAuthUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [authError, setAuthError] = useState(null);
-
-  const [activeUid, setActiveUid] = useState(null);
+  
+  // CAPA DE SEGURIDAD 1: Modo Privacidad Anti-Shoulder Surfing
+  const [privacyMode, setPrivacyMode] = useState(false);
 
   useEffect(() => {
+    if (privacyMode) {
+      document.body.classList.add('privacy-mode');
+    } else {
+      document.body.classList.remove('privacy-mode');
+    }
+  }, [privacyMode]);
 
-    const unsub = onAuthStateChanged(auth, async (u) => {
+  // Todas las invitaciones/colaboraciones (de cualquier dueño) dirigidas a mi correo
+  const [myMemberships, setMyMemberships] = useState([]);
+  const [membershipsLoaded, setMembershipsLoaded] = useState(false);
+
+  // Colaboradores que YO (como dueño) he invitado a mi propia cuenta
+  const [ownedCollaborators, setOwnedCollaborators] = useState([]);
+
+  const [activeWorkspaceUid, setActiveWorkspaceUidState] = useState(null);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (u) => {
       setAuthUser(u);
-      if (u && u.email) {
-        try {
-          const q = query(collectionGroup(db, 'collaborators'), where('email', '==', u.email));
-          const snap = await getDocs(q);
-          if (!snap.empty) {
-            setActiveUid(snap.docs[0].ref.parent.parent.id);
-          } else {
-            setActiveUid(u.uid);
-          }
-        } catch {
-          setActiveUid(u.uid);
-        }
-      } else {
-        setActiveUid(null);
-      }
       setAuthLoading(false);
     });
     return () => unsub();
   }, []);
+
+  // Escucha en tiempo real cualquier colaboración (users/*/collaborators) cuyo email me pertenezca
+  useEffect(() => {
+    if (!authUser?.email || !db) {
+      setMyMemberships([]);
+      setMembershipsLoaded(true);
+      return;
+    }
+    setMembershipsLoaded(false);
+    const myEmail = normalizeEmail(authUser.email);
+    const q = query(collectionGroup(db, 'collaborators'), where('email', '==', myEmail));
+    const unsub = onSnapshot(q, (snap) => {
+      const rows = [];
+      snap.forEach((d) => {
+        const ownerUid = d.ref.parent.parent?.id;
+        if (ownerUid) rows.push({ id: d.id, ownerUid, ...d.data() });
+      });
+      setMyMemberships(rows);
+      setMembershipsLoaded(true);
+    }, () => {
+      setMyMemberships([]);
+      setMembershipsLoaded(true);
+    });
+    return () => unsub();
+  }, [authUser?.email]);
+
+  // Escucha en tiempo real la lista de colaboradores que yo mismo he invitado
+  useEffect(() => {
+    if (!authUser?.uid || !db) {
+      setOwnedCollaborators([]);
+      return;
+    }
+    const unsub = onSnapshot(collection(db, 'users', authUser.uid, 'collaborators'), (snap) => {
+      const rows = [];
+      snap.forEach((d) => rows.push({ id: d.id, ...d.data() }));
+      setOwnedCollaborators(rows);
+    }, () => setOwnedCollaborators([]));
+    return () => unsub();
+  }, [authUser?.uid]);
+
+  // Membresías activas (invitación aceptada) y pendientes (esperando mi respuesta)
+  const activeMemberships = useMemo(
+    () => myMemberships.filter((m) => m.status === 'active'),
+    [myMemberships]
+  );
+  const pendingInvitations = useMemo(
+    () => myMemberships.filter((m) => m.status === 'pending'),
+    [myMemberships]
+  );
+
+  // Espacios de trabajo disponibles para el usuario: el propio + cuentas compartidas activas
+  const workspaces = useMemo(() => {
+    if (!authUser) return [];
+    const own = { uid: authUser.uid, role: 'owner', isOwner: true, label: 'Mi cuenta', email: authUser.email };
+    const shared = activeMemberships.map((m) => ({
+      uid: m.ownerUid,
+      role: m.role === ROLES.EDITOR ? ROLES.EDITOR : ROLES.VIEWER,
+      isOwner: false,
+      label: m.ownerName || m.ownerEmail || 'Cuenta compartida',
+      email: m.ownerEmail,
+    }));
+    return [own, ...shared];
+  }, [authUser, activeMemberships]);
+
+  // Restaura la preferencia de espacio de trabajo activo (por usuario) y valida que siga siendo válida
+  useEffect(() => {
+    if (!authUser) {
+      setActiveWorkspaceUidState(null);
+      return;
+    }
+    if (!membershipsLoaded) return;
+    let stored = null;
+    try {
+      stored = window.localStorage.getItem(`${WORKSPACE_STORAGE_PREFIX}${authUser.uid}`);
+    } catch {
+      stored = null;
+    }
+    const isValid = stored && workspaces.some((w) => w.uid === stored);
+    setActiveWorkspaceUidState(isValid ? stored : authUser.uid);
+  }, [authUser, membershipsLoaded, workspaces]);
+
+  const activeUid = activeWorkspaceUid;
+
+  const activeWorkspace = useMemo(
+    () => workspaces.find((w) => w.uid === activeUid) || null,
+    [workspaces, activeUid]
+  );
+
+  const myRole = activeWorkspace?.role || 'owner';
+  const isOwnerWorkspace = !activeWorkspace || activeWorkspace.isOwner;
+  const isViewer = !isOwnerWorkspace && myRole === ROLES.VIEWER;
+  const isEditor = isOwnerWorkspace || myRole === ROLES.EDITOR;
+
+  const switchWorkspace = useCallback((uid) => {
+    if (!authUser || !uid) return;
+    setActiveWorkspaceUidState(uid);
+    try {
+      window.localStorage.setItem(`${WORKSPACE_STORAGE_PREFIX}${authUser.uid}`, uid);
+    } catch { /* almacenamiento no disponible, ignorar */ }
+  }, [authUser]);
 
   const loginWithGoogle = async () => {
     try {
@@ -63,15 +171,83 @@ export const AppDataProvider = ({ children }) => {
   const logout = async () => {
     try {
       await signOut(auth);
-      // Removed localStorage resets since it's driven by Firestore now
+      // [AUDITORÍA DE SEGURIDAD]: Purga total del heap de JS.
+      // Destruimos la instancia de la aplicación forzando una recarga limpia.
+      window.localStorage.removeItem('fn_active_workspace_');
+      window.location.href = '/'; 
     } catch(e) { console.error(e); }
   };
+
+  // ============================================================
+  // GESTIÓN DE COLABORADORES (como dueño de la cuenta)
+  // ============================================================
+  const inviteCollaborator = useCallback(async (email, role = ROLES.VIEWER) => {
+    if (!authUser) throw new Error('Debes iniciar sesión.');
+    const normalized = normalizeEmail(email);
+    if (!normalized || !normalized.includes('@')) throw new Error('Ingresa un correo electrónico válido.');
+    if (normalized === normalizeEmail(authUser.email)) throw new Error('No puedes invitarte a ti mismo.');
+    const safeRole = role === ROLES.EDITOR ? ROLES.EDITOR : ROLES.VIEWER;
+    await setDoc(doc(db, 'users', authUser.uid, 'collaborators', normalized), {
+      email: normalized,
+      role: safeRole,
+      status: 'pending',
+      ownerUid: authUser.uid,
+      ownerName: authUser.displayName || '',
+      ownerEmail: normalizeEmail(authUser.email),
+      invitedAt: new Date().toISOString(),
+      respondedAt: null,
+      uid: null,
+    });
+  }, [authUser]);
+
+  const updateCollaboratorRole = useCallback(async (collabId, role) => {
+    if (!authUser) return;
+    const safeRole = role === ROLES.EDITOR ? ROLES.EDITOR : ROLES.VIEWER;
+    await updateDoc(doc(db, 'users', authUser.uid, 'collaborators', collabId), { role: safeRole });
+  }, [authUser]);
+
+  const removeCollaborator = useCallback(async (collabId) => {
+    if (!authUser) return;
+    await deleteDoc(doc(db, 'users', authUser.uid, 'collaborators', collabId));
+  }, [authUser]);
+
+  // ============================================================
+  // RESPUESTA A INVITACIONES (como colaborador invitado)
+  // ============================================================
+  const acceptInvitation = useCallback(async (ownerUid) => {
+    if (!authUser?.email) return;
+    const collabId = normalizeEmail(authUser.email);
+    await updateDoc(doc(db, 'users', ownerUid, 'collaborators', collabId), {
+      status: 'active',
+      uid: authUser.uid,
+      respondedAt: new Date().toISOString(),
+    });
+    switchWorkspace(ownerUid);
+  }, [authUser, switchWorkspace]);
+
+  const rejectInvitation = useCallback(async (ownerUid) => {
+    if (!authUser?.email) return;
+    const collabId = normalizeEmail(authUser.email);
+    await deleteDoc(doc(db, 'users', ownerUid, 'collaborators', collabId));
+  }, [authUser]);
+
+  const leaveWorkspace = useCallback(async (ownerUid) => {
+    if (!authUser?.email) return;
+    const collabId = normalizeEmail(authUser.email);
+    await deleteDoc(doc(db, 'users', ownerUid, 'collaborators', collabId));
+    if (activeUid === ownerUid) switchWorkspace(authUser.uid);
+  }, [authUser, activeUid, switchWorkspace]);
 
   const useFirestoreState = (key, initialValue) => {
     const [state, setState] = useState(initialValue);
 
     useEffect(() => {
-      if (!activeUid) return;
+      if (!activeUid) {
+        // [AUDITORÍA DE SEGURIDAD]: Aniquilación de datos al cerrar sesión.
+        // Si no hay usuario activo, el estado local vuelve a su valor inicial. Nada queda en caché.
+        setState(initialValue);
+        return;
+      }
       const docRef = doc(db, 'users', activeUid, 'appData', key);
       const unsubscribe = onSnapshot(docRef, (snap) => {
         if (snap.exists()) {
@@ -83,24 +259,23 @@ export const AppDataProvider = ({ children }) => {
             try {
               const parsed = JSON.parse(legacy);
               setState(parsed);
-              setDoc(docRef, { data: parsed });
-              window.localStorage.removeItem(key);
+              if (!isViewer) setDoc(docRef, { data: parsed }).catch(console.error);
+              window.localStorage.removeItem(key); // Sanitize local storage
             } catch {
-              setDoc(docRef, { data: initialValue });
+              if (!isViewer) setDoc(docRef, { data: initialValue }).catch(console.error);
             }
           } else {
-            setDoc(docRef, { data: initialValue });
+            if (!isViewer) setDoc(docRef, { data: initialValue }).catch(console.error);
           }
         }
       });
       return () => unsubscribe();
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeUid, key]);
+    }, [activeUid, key, isViewer]);
 
     const setPersistentState = (newValueOrFn) => {
       setState(prev => {
         const newVal = typeof newValueOrFn === 'function' ? newValueOrFn(prev) : newValueOrFn;
-        if (activeUid) {
+        if (activeUid && !isViewer) {
           setDoc(doc(db, 'users', activeUid, 'appData', key), { data: newVal }).catch(console.error);
         }
         return newVal;
@@ -131,6 +306,7 @@ export const AppDataProvider = ({ children }) => {
   const [notificaciones, setNotificaciones] = useFirestoreState('fn_notifs', []);
   const [configuracion, setConfiguracion] = useFirestoreState('fn_config', {
     tema: 'dark', moneda: 'CLP', notifEmail: true, notifPush: true,
+    geminiApiKey: '', // Clave BYOK para la IA
     categorias: ['Salario', 'Freelance', 'Inversión', 'Vivienda', 'Alimentación', 'Transporte', 'Servicios', 'Ocio', 'Salud', 'Educación']
   });
   const [sesiones, setSesiones] = useFirestoreState('fn_sesiones', [
@@ -149,13 +325,19 @@ export const AppDataProvider = ({ children }) => {
   const value = {
     HasKeys, authLoading, authUser, activeUid, authError, loginWithGoogle, logout,
     activePage, setActivePage, period, setPeriod,
+    privacyMode, setPrivacyMode,
     usuario, setUsuario, ingresos, setIngresos,
     gastos, setGastos, transferencias, setTransferencias,
     bancos, setBancos, ahorros, setAhorros,
     inversiones, setInversiones, deudas, setDeudas,
     presupuestos, setPresupuestos, chatsIA, setChatsIA,
     notificaciones, setNotificaciones, configuracion, setConfiguracion,
-    sesiones, setSesiones, removeSesion, closeAllSesiones
+    sesiones, setSesiones, removeSesion, closeAllSesiones,
+    // Cuentas colaborativas / espacios de trabajo compartidos
+    workspaces, activeWorkspace, myRole, isOwnerWorkspace, isViewer, isEditor,
+    switchWorkspace, pendingInvitations, ownedCollaborators,
+    inviteCollaborator, updateCollaboratorRole, removeCollaborator,
+    acceptInvitation, rejectInvitation, leaveWorkspace,
   };
 
   return (

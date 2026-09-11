@@ -14,9 +14,13 @@
     "date-fns": "^4.1.0",
     "dompurify": "^3.4.14",
     "firebase": "^12.11.0",
+    "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "react-joyride": "^3.2.0",
+    "recharts": "^3.10.1",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {

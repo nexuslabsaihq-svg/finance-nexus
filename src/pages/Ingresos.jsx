@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useAppData } from '../context/AppDataContext';
+import { formatMiles, parseMiles } from '../utils/chileData';
 import * as XLSX from 'xlsx';
 import ComprobanteUploader from '../components/ComprobanteUploader';
 import { deleteComprobante } from '../firebase/storage';
@@ -35,9 +36,11 @@ export default function Ingresos() {
 
   const handleCreate = () => {
     if(!form.desc || !form.monto) return;
-    const newRecord = { ...form, id: Date.now().toString(), monto: Number(form.monto), comprobante: comprobante || null };
+    const finalCat = form.cat === 'Otro' && form.catCustom ? form.catCustom : form.cat;
+    const newRecord = { ...form, cat: finalCat, id: Date.now().toString(), monto: Number(form.monto), comprobante: comprobante || null };
+    delete newRecord.catCustom;
     setIngresos([newRecord, ...ingresos]);
-    setForm({ desc: '', cat: configuracion?.categorias?.[0] || 'Salario', monto: '', fecha: new Date().toISOString().split('T')[0], cuenta: bancos?.[0]?.nombre || 'Efectivo', notas: '' });
+    setForm({ desc: '', cat: configuracion?.categorias?.[0] || 'Salario', catCustom: '', monto: '', fecha: new Date().toISOString().split('T')[0], cuenta: bancos?.[0]?.nombre || 'Efectivo', notas: '' });
     setComprobante(null);
   };
 
@@ -112,28 +115,37 @@ export default function Ingresos() {
         </svg>
       </div>
       
-      <div className="card"><div className="card-hdr"><div className="card-title">➕ Registrar Ingreso</div></div>
-        <div className="fg fg2">
-          <div className="fgrp"><label className="flbl">Descripción</label><input className="finp" placeholder="Ej: Salario mensual" value={form.desc} onChange={e=>setForm({...form, desc:(e.target.value)})}/></div>
-          <div className="fgrp">
-            <label className="flbl">Categoría</label>
-            <select className="fsel" value={form.cat} onChange={e=>setForm({...form, cat:(e.target.value)})}>
-              {configuracion?.categorias?.map(c => <option key={c}>{c}</option>)}
-            </select>
+      <div className="g2">
+        <div className="card"><div className="card-hdr"><div className="card-title">➕ Registrar Ingreso</div></div>
+          <div className="fg fg2">
+            <div className="fgrp"><label className="flbl">Descripción</label><input className="finp" placeholder="Ej: Sueldo, Venta..." value={form.desc} onChange={e=>setForm({...form, desc:(e.target.value)})}/></div>
+            <div className="fgrp">
+              <label className="flbl">Categoría</label>
+              <select className="fsel" value={form.cat} onChange={e=>setForm({...form, cat:e.target.value})}>
+                {configuracion?.categorias?.map(c => <option key={c}>{c}</option>)}
+                <option value="Otro">Otro (Especificar)</option>
+              </select>
+              {form.cat === 'Otro' && (
+                <input className="finp" style={{marginTop: '8px'}} placeholder="Escribe la categoría..." value={form.catCustom || ''} onChange={e => setForm({...form, catCustom: e.target.value})} />
+              )}
+            </div>
+            <div className="fgrp">
+              <label className="flbl">Monto (CLP)</label>
+              <input className="finp" type="text" placeholder="$0" value={formatMiles(form.monto)} onChange={e=>setForm({...form, monto:parseMiles(e.target.value)})}/>
+            </div>
+            <div className="fgrp"><label className="flbl">Fecha</label><input className="finp" type="date" value={form.fecha} onChange={e=>setForm({...form, fecha:(e.target.value)})}/></div>
+            <div className="fgrp">
+              <label className="flbl">Cuenta de Destino</label>
+              <select className="fsel" value={form.cuenta} onChange={e=>setForm({...form, cuenta:e.target.value})}>
+                {bancos?.map(b => <option key={b.id}>{b.nombre}</option>)}
+                <option>Efectivo</option>
+              </select>
+            </div>
+            <div className="fgrp"><label className="flbl">Notas</label><input className="finp" placeholder="Opcional..." value={form.notas} onChange={e=>setForm({...form, notas:(e.target.value)})}/></div>
           </div>
-          <div className="fgrp"><label className="flbl">Monto (CLP)</label><input className="finp" type="number" placeholder="$0" value={form.monto} onChange={e=>setForm({...form, monto:(e.target.value)})}/></div>
-          <div className="fgrp"><label className="flbl">Fecha</label><input className="finp" type="date" value={form.fecha} onChange={e=>setForm({...form, fecha:(e.target.value)})}/></div>
-          <div className="fgrp">
-            <label className="flbl">Cuenta / Banco</label>
-            <select className="fsel" value={form.cuenta} onChange={e=>setForm({...form, cuenta:(e.target.value)})}>
-              {bancos?.map(b => <option key={b.id}>{b.nombre}</option>)}
-              <option>Efectivo</option>
-            </select>
-          </div>
-          <div className="fgrp"><label className="flbl">Notas</label><input className="finp" placeholder="Opcional..." value={form.notas} onChange={e=>setForm({...form, notas:(e.target.value)})}/></div>
+          <ComprobanteUploader modulo="ingresos" value={comprobante} onChange={setComprobante} />
+          <div style={{"marginTop":"14px","display":"flex","gap":"8px"}}><button className="btn-p btn" onClick={handleCreate} style={{padding:'8px 16px'}}>💾 Guardar</button><button className="btn btn-gh" onClick={() => { setForm({ desc: '', cat: configuracion?.categorias?.[0]||'Salario', catCustom:'', monto: '', fecha: new Date().toISOString().split('T')[0], cuenta: bancos?.[0]?.nombre||'Efectivo', notas: '' }); setComprobante(null); }}>Cancelar</button></div>
         </div>
-        <ComprobanteUploader modulo="ingresos" value={comprobante} onChange={setComprobante} />
-        <div style={{"marginTop":"14px","display":"flex","gap":"8px"}}><button className="btn-p btn" onClick={handleCreate} style={{padding:'8px 16px'}}>💾 Guardar</button><button className="btn btn-gh" onClick={() => { setForm({ desc: '', cat: configuracion?.categorias?.[0]||'Salario', monto: '', fecha: new Date().toISOString().split('T')[0], cuenta: bancos?.[0]?.nombre||'Efectivo', notas: '' }); setComprobante(null); }}>Cancelar</button></div>
       </div>
       
       <div className="card">
