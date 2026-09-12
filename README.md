@@ -4,6 +4,16 @@
 
 ---
 
+## 📚 Base de Conocimiento y Documentación
+
+Este repositorio almacena exclusivamente el **código ejecutable** del producto. La documentación de arquitectura, decisiones técnicas (ADRs), modelo de datos, seguridad, post-mortems y reportes de auditoría reside de forma desacoplada en:
+
+* 🌐 **Repositorio Remoto:** [nexuslabsaihq-svg/finance-nexus-knowledge](https://github.com/nexuslabsaihq-svg/finance-nexus-knowledge)
+* 📂 **Submódulo Local:** [`knowledge/`](knowledge/INDEX.md)
+* 🗺️ **Guía Integral de Arquitectura y Contexto:** [`PROJECT_CONTEXT.md`](PROJECT_CONTEXT.md)
+
+---
+
 ## 🚀 Características Principales
 
 ### 📊 1. Panel de Control y Análisis Visual (Recharts)
@@ -85,10 +95,14 @@ VITE_GEMINI_API_KEY=AIzaSy...
 
 ## 💻 Instalación y Desarrollo Local
 
-1. **Clonar el repositorio:**
+1. **Clonar el repositorio (incluyendo submódulo documental):**
    ```bash
-   git clone https://github.com/nexuslabsaihq-svg/finance-nexus.git
+   git clone --recurse-submodules https://github.com/nexuslabsaihq-svg/finance-nexus.git
    cd finance-nexus
+   ```
+   *Si ya clonaste el proyecto sin submódulo:*
+   ```bash
+   git submodule update --init --recursive
    ```
 
 2. **Instalar dependencias:**
@@ -107,12 +121,19 @@ VITE_GEMINI_API_KEY=AIzaSy...
    npm run build
    ```
 
+5. **Actualizar la base de conocimiento:**
+   ```bash
+   git submodule update --remote knowledge
+   ```
+
 ---
 
 ## 📁 Estructura del Proyecto
 
 ```text
 finance-nexus/
+├── knowledge/                 # [Submódulo Git] Documentación, ADRs, arquitectura, seguridad y auditorías
+├── PROJECT_CONTEXT.md         # Guía unificada de contexto y gobernanza para desarrolladores e IAs
 ├── docs/                      # Especificaciones del modelo financiero y reglas de negocio
 ├── public/                    # Assets estáticos públicos
 ├── src/
@@ -124,6 +145,7 @@ finance-nexus/
 │   ├── App.jsx                # Enrutador y control de sesión
 │   ├── index.css              # Sistema de diseño, temas (Light/Dark) y Glassmorphism
 │   └── main.jsx               # Punto de entrada de la aplicación
+├── .gitmodules                # Configuración de submódulos Git (apunta a finance-nexus-knowledge)
 ├── firestore.rules            # Reglas de seguridad de Cloud Firestore
 ├── storage.rules              # Reglas de seguridad de Cloud Storage (comprobantes max 10MB)
 ├── vercel.json                # Configuración de despliegue y cabeceras de seguridad

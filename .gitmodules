@@ -1,0 +1,4 @@
+[submodule "knowledge"]
+	path = knowledge
+	url = https://github.com/nexuslabsaihq-svg/finance-nexus-knowledge.git
+	branch = main
