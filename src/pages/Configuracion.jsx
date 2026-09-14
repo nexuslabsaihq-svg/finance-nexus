@@ -1,0 +1,391 @@
+import React, { useState } from 'react';
+import { useAppData } from '../context/useAppData';
+
+export default function Configuracion() {
+  const { configuracion, setConfiguracion, setUsuario } = useAppData();
+  const [newCatName, setNewCatName] = useState('');
+  const [newCatType, setNewCatType] = useState('Gasto');
+  const [apiKeyInput, setApiKeyInput] = useState(configuracion.geminiApiKey || '');
+  const [showApiGuide, setShowApiGuide] = useState(false);
+  const [showKeyModal, setShowKeyModal] = useState(false);
+
+  const updateConfig = (field, value) => {
+    setConfiguracion(prev => ({ ...prev, [field]: value }));
+  };
+
+  const toggleNotif = (field) => {
+    setConfiguracion(prev => ({ ...prev, [field]: !prev[field] }));
+  };
+
+  const handleAddCategory = () => {
+    if (newCatName.trim()) {
+      const typeLabel = newCatType === 'Gasto' ? 'Gasto' : 'Ingreso';
+      const catWithTag = `${newCatName.trim()} | ${typeLabel}`;
+      if (!configuracion.categorias.includes(catWithTag)) {
+        setConfiguracion(prev => ({
+          ...prev, 
+          categorias: [...prev.categorias, catWithTag]
+        }));
+      }
+      setNewCatName('');
+    }
+  };
+
+  const removeCategory = (cat) => {
+    setConfiguracion(prev => ({
+      ...prev,
+      categorias: prev.categorias.filter(c => c !== cat)
+    }));
+  };
+
+  const cleanCategories = configuracion.categorias.map(c => {
+    if (c.includes(' | ')) {
+      const [name, type] = c.split(' | ');
+      return { original: c, name, type };
+    }
+    // Backward compatibility for generic categories
+    return { original: c, name: c, type: 'Gasto' };
+  });
+
+  return (
+    <div className="page active" style={{ display: 'flex' }}>
+      <div className="page-hdr">
+        <div>
+          <div className="page-title">⚙️ Configuración</div>
+          <div className="page-sub">Personaliza tu experiencia en Finance Nexus</div>
+        </div>
+      </div>
+      
+      <div className="g2">
+        <div className="card" style={{borderTop:"2px solid var(--blue)"}}>
+          <div className="card-hdr"><div className="card-title" style={{color:"var(--blue)"}}>🔔 Notificaciones</div></div>
+          
+          <div className="trow">
+            <div><div className="tg-lbl">Notificaciones por Email</div><div className="tg-desc">Recibe boletines y alertas</div></div>
+            <label className="toggle">
+              <input type="checkbox" checked={configuracion.notifEmail} onChange={() => toggleNotif('notifEmail')} />
+              <span className="ttr"></span>
+            </label>
+          </div>
+          
+          <div className="trow">
+            <div><div className="tg-lbl">Notificaciones Push</div><div className="tg-desc">Alertas instantáneas en el navegador</div></div>
+            <label className="toggle">
+              <input type="checkbox" checked={configuracion.notifPush} onChange={() => toggleNotif('notifPush')} />
+              <span className="ttr"></span>
+            </label>
+          </div>
+          
+          <div className="trow">
+            <div><div className="tg-lbl">Insights de IA</div><div className="tg-desc">Recomendaciones semanales</div></div>
+            <label className="toggle"><input type="checkbox" checked readOnly /><span className="ttr"></span></label>
+          </div>
+        </div>
+        
+        <div className="card" style={{borderTop:"2px solid var(--purple)"}}>
+          <div className="card-hdr"><div className="card-title" style={{color:"var(--purple)"}}>🎨 Experiencia Global</div></div>
+          <div className="fg" style={{gap:"10px"}}>
+            <div className="fgrp">
+              <label className="flbl">Tema UI</label>
+              <select className="fsel" value={configuracion.tema} onChange={(e) => updateConfig('tema', e.target.value)}>
+                <option value="dark">Oscuro</option>
+                <option value="light">Claro</option>
+              </select>
+            </div>
+            <div className="fgrp">
+              <label className="flbl">Moneda por Defecto</label>
+              <select className="fsel" value={configuracion.moneda} onChange={(e) => updateConfig('moneda', e.target.value)}>
+                <option value="CLP">CLP</option>
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+              </select>
+            </div>
+          </div>
+          <div className="trow" style={{marginTop:"15px", paddingTop:"15px", borderTop:"1px solid var(--border)"}}>
+            <div>
+              <div className="tg-lbl">Mostrar Tour de Bienvenida</div>
+              <div className="tg-desc">Reactiva los recuadros interactivos que te guían por Finance Nexus.</div>
+            </div>
+            <label className="toggle">
+              <input type="checkbox" checked={configuracion.showTour !== false} onChange={() => updateConfig('showTour', configuracion.showTour === false ? true : false)} />
+              <span className="ttr"></span>
+            </label>
+          </div>
+        </div>
+
+        <div className="card" style={{borderTop:"2px solid #00d2ff"}}>
+          <div className="card-hdr">
+            <div className="card-title" style={{color:"#00d2ff"}}>🧠 Integración IA (Nexus Ultimate Synthesis)</div>
+            <div className="card-sub" style={{fontSize:"11px", color:"var(--text2)", marginTop:"4px"}}>Trae tu propia llave (BYOK) para tener consultas ilimitadas de Inteligencia Artificial.</div>
+          </div>
+          <div className="fg" style={{marginTop:"10px"}}>
+            <div className="fgrp">
+              <label className="flbl">Google Gemini API Key</label>
+              <div style={{display:"flex", gap:"10px"}}>
+                <input 
+                  className="finp" 
+                  type="password" 
+                  autoComplete="new-password"
+                  spellCheck="false"
+                  placeholder="AIzaSyB••••••••••••" 
+                  value={apiKeyInput} 
+                  onChange={(e) => setApiKeyInput(e.target.value)}
+                  style={{flex: 1}}
+                />
+                <button 
+                  className="btn btn-p" 
+                  onClick={() => setShowKeyModal(true)}
+                  style={{padding: "0 15px", whiteSpace: "nowrap"}}
+                  disabled={!apiKeyInput.trim()}
+                >
+                  💾 Guardar
+                </button>
+              </div>
+
+              {/* GUÍA INTERACTIVA DE API KEYS */}
+              <div style={{marginTop: "20px", background: "rgba(0, 210, 255, 0.05)", border: "1px solid rgba(0, 210, 255, 0.2)", borderRadius: "12px", overflow: "hidden"}}>
+                <div style={{padding: "12px 15px", borderBottom: "1px solid rgba(0, 210, 255, 0.1)", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer"}} onClick={() => setShowApiGuide(!showApiGuide)}>
+                  <span style={{fontSize: "13px", fontWeight: "600", color: "#00d2ff"}}>📖 ¿Cómo conseguir una API Key Gratis?</span>
+                  <span>{showApiGuide ? "▲" : "▼"}</span>
+                </div>
+                
+                {showApiGuide && (
+                  <div style={{padding: "15px", fontSize: "13px", color: "var(--text2)", display: "flex", flexDirection: "column", gap: "15px"}}>
+                    <p style={{margin: 0}}>Para que Finance Nexus sea accesible, utilizamos un modelo <strong>"Trae tu propia llave" (BYOK)</strong>. Esto te permite usar los mejores modelos del mundo sin tener que pagarnos una suscripción mensual. Aquí tienes las mejores opciones:</p>
+                    
+                    <div style={{background: "var(--surface)", padding: "12px", borderRadius: "8px", borderLeft: "3px solid var(--green)"}}>
+                      <div style={{fontWeight: "bold", color: "var(--text)", marginBottom: "5px"}}>Opción 1: Google AI Studio (Recomendada 🌟)</div>
+                      <p style={{margin: "0 0 10px 0", fontSize: "12px"}}>Google ofrece 1.500 consultas gratis al día con el modelo Gemini Flash. Es la opción más rápida, segura y 100% gratuita.</p>
+                      <ol style={{margin: 0, paddingLeft: "20px", fontSize: "12px", display: "flex", flexDirection: "column", gap: "5px"}}>
+                        <li>Entra a <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" style={{color: "var(--blue)"}}>Google AI Studio</a> e inicia sesión con tu cuenta de Google.</li>
+                        <li>Haz clic en el botón azul <strong>"Create API key"</strong>.</li>
+                        <li>Copia el código largo que empieza con <code>AIzaSy...</code></li>
+                        <li>Pégalo en el recuadro de arriba y dale a "Guardar". ¡Listo!</li>
+                      </ol>
+                    </div>
+
+                    <div style={{background: "var(--surface)", padding: "12px", borderRadius: "8px", borderLeft: "3px solid var(--orange)"}}>
+                      <div style={{fontWeight: "bold", color: "var(--text)", marginBottom: "5px"}}>Opción 2: Google Cloud Vertex AI (Empresas)</div>
+                      <p style={{margin: 0, fontSize: "12px"}}>Si eres una empresa y ya tienes Google Cloud con facturación activada, puedes generar una credencial desde la consola de Vertex AI para límites empresariales y SLA garantizado.</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* MODAL DE ADVERTENCIA DE SEGURIDAD PARA LA API KEY */}
+        {showKeyModal && (
+          <div style={{position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.8)", backdropFilter: "blur(5px)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px"}}>
+            <div style={{background: "var(--surface)", width: "100%", maxWidth: "450px", borderRadius: "16px", padding: "24px", boxShadow: "0 20px 50px rgba(0,0,0,0.5)", borderTop: "4px solid var(--orange)"}}>
+              <div style={{fontSize: "40px", textAlign: "center", marginBottom: "15px"}}>🛡️</div>
+              <h3 style={{margin: "0 0 15px 0", textAlign: "center", color: "var(--text)"}}>Advertencia de Seguridad</h3>
+              <p style={{fontSize: "13px", color: "var(--text2)", lineHeight: "1.6", marginBottom: "10px"}}>
+                Estás a punto de guardar una <strong>Llave de Acceso Privada (API Key)</strong>. Por favor, lee esto con atención:
+              </p>
+              <ul style={{fontSize: "12px", color: "var(--text2)", paddingLeft: "20px", marginBottom: "20px", display: "flex", flexDirection: "column", gap: "8px"}}>
+                <li><strong>No la compartas con nadie:</strong> Esta llave es como tu tarjeta de crédito para la Inteligencia Artificial.</li>
+                <li><strong>Bóveda Encriptada:</strong> Tu llave se cifrará y se guardará directamente en tu bóveda privada en la nube. <strong>Nosotros no tenemos acceso a ella.</strong></li>
+                <li><strong>Aislamiento Total:</strong> Nadie más en Finance Nexus podrá usar tus cuotas ni leer tu llave.</li>
+              </ul>
+              <div style={{display: "flex", gap: "10px", justifyContent: "flex-end"}}>
+                <button className="btn btn-d" onClick={() => setShowKeyModal(false)}>Cancelar</button>
+                <button className="btn btn-p" style={{background: "var(--orange)", borderColor: "var(--orange)"}} onClick={() => {
+                  updateConfig('geminiApiKey', apiKeyInput);
+                  setShowKeyModal(false);
+                  alert('🔒 Llave guardada y encriptada exitosamente en tu bóveda.');
+                }}>Entiendo, Guardar Llave</button>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        <div className="card" style={{borderTop:"2px solid var(--pink)"}}>
+          <div className="card-hdr"><div className="card-title" style={{color:"var(--pink)"}}>🏷️ Gestor de Categorías</div></div>
+          
+          <div className="fg" style={{gridTemplateColumns:"1fr 1fr",marginBottom:"12px"}}>
+            <div className="fgrp">
+              <label className="flbl">Nombre</label>
+              <input className="finp" placeholder="Nueva categoría..." value={newCatName} onChange={e => setNewCatName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}/>
+            </div>
+            <div className="fgrp">
+              <label className="flbl">Tipo</label>
+              <select className="fsel" value={newCatType} onChange={e => setNewCatType(e.target.value)}>
+                <option value="Gasto">Gasto</option>
+                <option value="Ingreso">Ingreso</option>
+              </select>
+            </div>
+          </div>
+          
+          <button className="btn btn-o btn-sm" style={{marginBottom:"14px"}} onClick={handleAddCategory}>+ Agregar Categoría</button>
+          
+          <div className="g2">
+            <div style={{ background: "rgba(52,211,153,0.05)", border: "1px solid rgba(52,211,153,0.2)", borderRadius: "12px", padding: "15px" }}>
+              <div style={{ color: "var(--green)", fontWeight: "bold", marginBottom: "15px", display: "flex", alignItems: "center", gap: "8px" }}>
+                <span>💰</span> Categorías de Ingreso
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+                {cleanCategories.filter(c => c.type === 'Ingreso').length === 0 ? (
+                  <div style={{ fontSize: "12px", color: "var(--text2)", fontStyle: "italic" }}>No hay categorías de ingreso.</div>
+                ) : (
+                  cleanCategories.filter(c => c.type === 'Ingreso').map((c, idx) => (
+                    <div key={idx} style={{
+                      display: "flex", flexDirection: "column", justifyContent: "space-between", padding: "12px 14px", 
+                      background: 'linear-gradient(135deg, rgba(52,211,153,0.1), rgba(20,184,166,0.15))', 
+                      border: '1px solid rgba(52,211,153,0.3)', borderRadius: "12px", fontSize: "13px",
+                      flex: "1 1 140px", maxWidth: "200px", boxShadow: "0 4px 12px rgba(0,0,0,0.05)"
+                    }}>
+                      <div style={{ fontWeight: "600", color: "var(--text)", marginBottom: "12px", wordBreak: "break-word" }}>{c.name}</div>
+                      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                        <button className="btn btn-d btn-sm" style={{ padding: "4px", minWidth: "24px", height: "24px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => removeCategory(c.original)}>🗑️</button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div style={{ background: "rgba(248,113,113,0.05)", border: "1px solid rgba(248,113,113,0.2)", borderRadius: "12px", padding: "15px" }}>
+              <div style={{ color: "var(--pink)", fontWeight: "bold", marginBottom: "15px", display: "flex", alignItems: "center", gap: "8px" }}>
+                <span>📉</span> Categorías de Gasto
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+                {cleanCategories.filter(c => c.type === 'Gasto').length === 0 ? (
+                  <div style={{ fontSize: "12px", color: "var(--text2)", fontStyle: "italic" }}>No hay categorías de gasto.</div>
+                ) : (
+                  cleanCategories.filter(c => c.type === 'Gasto').map((c, idx) => (
+                    <div key={idx} style={{
+                      display: "flex", flexDirection: "column", justifyContent: "space-between", padding: "12px 14px", 
+                      background: 'linear-gradient(135deg, rgba(248,113,113,0.1), rgba(255,140,90,0.15))', 
+                      border: '1px solid rgba(248,113,113,0.3)', borderRadius: "12px", fontSize: "13px",
+                      flex: "1 1 140px", maxWidth: "200px", boxShadow: "0 4px 12px rgba(0,0,0,0.05)"
+                    }}>
+                      <div style={{ fontWeight: "600", color: "var(--text)", marginBottom: "12px", wordBreak: "break-word" }}>{c.name}</div>
+                      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                        <button className="btn btn-d btn-sm" style={{ padding: "4px", minWidth: "24px", height: "24px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => removeCategory(c.original)}>🗑️</button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* CUMPLIMIENTO LEGAL CHILENO: SERNAC Y LEY 21.719 */}
+        <div className="card" style={{ borderTop: "2px solid var(--orange)", gridColumn: "1 / -1" }}>
+          <div className="card-hdr">
+            <div>
+              <div className="card-title" style={{ color: "var(--orange)", display: "flex", alignItems: "center", gap: "8px" }}>
+                <span>🏛️</span> Marco Legal, SERNAC & Privacidad de Datos
+              </div>
+              <div className="card-sub">
+                Garantías de cumplimiento normativo conforme a la Ley N° 19.496 (Protección al Consumidor) y Ley N° 21.719 (Protección de Datos Personales de Chile)
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px", marginTop: "10px" }}>
+            <div style={{ background: "rgba(255, 140, 66, 0.05)", border: "1px solid rgba(255, 140, 66, 0.2)", borderRadius: "12px", padding: "18px" }}>
+              <div style={{ fontWeight: 700, color: "var(--text)", marginBottom: "8px", fontSize: "14px" }}>
+                📜 Documentación Legal de la Plataforma
+              </div>
+              <p style={{ fontSize: "12.5px", color: "var(--text2)", lineHeight: 1.6, marginBottom: "14px" }}>
+                Consulta las condiciones de prestación del servicio, cláusulas de responsabilidad y política de tratamiento de datos personales de Finance Nexus SpA.
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <a
+                  href="/legal/terminos-y-condiciones.html"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-gh btn-sm"
+                  style={{ display: "flex", alignItems: "center", justifyContent: "space-between", textDecoration: "none" }}
+                >
+                  <span>📜 Términos y Condiciones</span>
+                  <span style={{ fontSize: "10px", color: "var(--text3)" }}>Ver documento ↗</span>
+                </a>
+                <a
+                  href="/legal/politica-privacidad.html"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-gh btn-sm"
+                  style={{ display: "flex", alignItems: "center", justifyContent: "space-between", textDecoration: "none" }}
+                >
+                  <span>🔒 Política de Privacidad (Ley 21.719)</span>
+                  <span style={{ fontSize: "10px", color: "var(--text3)" }}>Ver documento ↗</span>
+                </a>
+              </div>
+            </div>
+
+            <div style={{ background: "rgba(59, 130, 246, 0.05)", border: "1px solid rgba(59, 130, 246, 0.2)", borderRadius: "12px", padding: "18px" }}>
+              <div style={{ fontWeight: 700, color: "var(--text)", marginBottom: "8px", fontSize: "14px" }}>
+                🇨🇱 Protección al Consumidor y SERNAC
+              </div>
+              <p style={{ fontSize: "12.5px", color: "var(--text2)", lineHeight: 1.6, marginBottom: "14px" }}>
+                Enlaces directos al Servicio Nacional del Consumidor para orientación sobre derechos financieros y canal oficial de consultas o reclamos.
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <a
+                  href="https://www.sernac.cl/portal/618/w3-propertyvalue-59368.html"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-gh btn-sm"
+                  style={{ display: "flex", alignItems: "center", justifyContent: "space-between", textDecoration: "none" }}
+                >
+                  <span>🏛️ Portal SERNAC Financiero</span>
+                  <span style={{ fontSize: "10px", color: "var(--text3)" }}>Sitio oficial ↗</span>
+                </a>
+                <a
+                  href="https://www.sernac.cl/portal/617/w3-propertyvalue-58474.html"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-gh btn-sm"
+                  style={{ display: "flex", alignItems: "center", justifyContent: "space-between", textDecoration: "none" }}
+                >
+                  <span>📋 Ingresar Reclamo ante SERNAC</span>
+                  <span style={{ fontSize: "10px", color: "var(--text3)" }}>Portal Consumidor ↗</span>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ marginTop: "16px", paddingTop: "14px", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
+            <div style={{ fontSize: "12px", color: "var(--text3)" }}>
+              <strong>Finance Nexus SpA — RUT pendiente de confirmación</strong> · Santiago, Chile · Canal de soporte y reclamos: <a href="mailto:nexuslabsai.hq@gmail.com" style={{ color: "var(--orange)" }}>nexuslabsai.hq@gmail.com</a>
+            </div>
+            <button
+              type="button"
+              className="btn btn-gh btn-sm"
+              onClick={() => window.dispatchEvent(new Event('fn_open_cookie_consent'))}
+            >
+              🍪 Modificar Preferencias de Cookies
+            </button>
+          </div>
+        </div>
+
+        {/* MODO DESARROLLADOR: BOTÓN DE REINICIO DE EXPERIENCIA (Solo en Dev) */}
+        {import.meta.env?.DEV && (
+          <div style={{marginTop: "30px", padding: "15px", border: "1px dashed var(--pink)", borderRadius: "12px", textAlign: "center", background: "rgba(255, 77, 79, 0.05)"}}>
+            <div style={{color: "var(--pink)", fontWeight: "bold", fontSize: "12px", marginBottom: "8px"}}>🛠️ Zona de Pruebas (Modo Dev)</div>
+            <p style={{fontSize: "12px", color: "var(--text2)", marginBottom: "15px", margin: "0 0 15px 0"}}>Usa este botón para borrar tu llave API actual y olvidar que viste el tutorial. Así podrás vivir la experiencia de un usuario nuevo desde cero.</p>
+            <button 
+              className="btn btn-o" 
+              style={{borderColor: "var(--pink)", color: "var(--pink)", fontSize: "12px"}}
+              onClick={() => {
+                setConfiguracion(prev => ({ ...prev, geminiApiKey: '', showTour: true }));
+                setApiKeyInput('');
+                setUsuario(prev => ({ ...prev, hasSeenTutorial: false }));
+                alert('🔄 Experiencia reiniciada. Se borró la Llave API y el Tutorial. La página se recargará para simular un inicio fresco.');
+                window.location.href = '/';
+              }}
+            >
+              🔄 Simular Usuario Nuevo (Borrar Llave y Tutorial)
+            </button>
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+}

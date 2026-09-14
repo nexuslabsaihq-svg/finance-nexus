@@ -1,0 +1,67 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ============================================================
+    // FUNCIONES DE SEGURIDAD Y VALIDACIÓN
+    // ============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isAuthenticated() && request.auth.uid == uid;
+    }
+
+    function collaboratorDoc(uid) {
+      return /databases/(default)/documents/users/$(uid)/collaborators/$(request.auth.token.email.lower());
+    }
+
+    function isActiveCollaborator(uid) {
+      return isAuthenticated()
+        && request.auth.token.email != null
+        && firestore.exists(collaboratorDoc(uid))
+        && firestore.get(collaboratorDoc(uid)).data.status == 'active';
+    }
+
+    function isActiveEditor(uid) {
+      return isActiveCollaborator(uid)
+        && firestore.get(collaboratorDoc(uid)).data.role == 'editor';
+    }
+
+    function isValidFileSize() {
+      return request.resource.size <= 10 * 1024 * 1024; // Máximo 10MB
+    }
+
+    function isValidContentType() {
+      return request.resource.contentType.matches('image/(jpeg|png|webp)|application/pdf');
+    }
+
+    // ============================================================
+    // SEGURIDAD POR DEFECTO: Denegar todo acceso no explícito
+    // ============================================================
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+
+    // ============================================================
+    // COMPROBANTES: /users/{uid}/comprobantes/{modulo}/{archivo}
+    // 1. Solo usuarios autenticados (dueño o colaboradores)
+    // 2. Solo ruta designada
+    // 3. Tipos MIME permitidos: jpeg, png, webp, pdf
+    // 4. Tamaño máximo: 10MB
+    // ============================================================
+    match /users/{uid}/comprobantes/{modulo}/{archivo} {
+      allow read: if isOwner(uid) || isActiveCollaborator(uid);
+
+      allow create, update: if (isOwner(uid) || isActiveEditor(uid))
+                            && isValidFileSize()
+                            && isValidContentType();
+
+      allow delete: if isOwner(uid) || isActiveEditor(uid);
+    }
+  }
+}
+

@@ -1,0 +1,179 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ============================================================
+    // FUNCIONES AUXILIARES
+    // ============================================================
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function myEmail() {
+      return isSignedIn() ? request.auth.token.email.lower() : null;
+    }
+
+    // Documento de colaboración del usuario autenticado dentro de la cuenta de "ownerUid"
+    // (el id del documento es siempre el correo normalizado en minúsculas del invitado)
+    function collaboratorDoc(ownerUid) {
+      return get(/databases/$(database)/documents/users/$(ownerUid)/collaborators/$(myEmail()));
+    }
+
+    function isActiveCollaborator(ownerUid) {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/users/$(ownerUid)/collaborators/$(myEmail()))
+        && collaboratorDoc(ownerUid).data.status == 'active';
+    }
+
+    function isActiveEditor(ownerUid) {
+      return isActiveCollaborator(ownerUid) && collaboratorDoc(ownerUid).data.role == 'editor';
+    }
+
+    // ============================================================
+    // BASE: denegar todo por defecto — seguridad por omisión
+    // ============================================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ============================================================
+    // DATOS DEL USUARIO — el dueño siempre tiene acceso total.
+    // Los colaboradores activos ('editor'/'viewer') pueden leer;
+    // solo los colaboradores con rol 'editor' pueden escribir.
+    // ============================================================
+    // Colecciones permitidas (whitelist)
+    match /users/{userId}/appData/fn_ingresos {
+      allow read: if isOwner(userId) || isActiveCollaborator(userId);
+      allow write: if (isOwner(userId) || isActiveEditor(userId))
+                    && request.resource.data.keys().hasOnly(['data'])
+                    && request.resource.data.data is list;
+    }
+
+    match /users/{userId}/appData/fn_gastos {
+      allow read: if isOwner(userId) || isActiveCollaborator(userId);
+      allow write: if (isOwner(userId) || isActiveEditor(userId))
+                    && request.resource.data.keys().hasOnly(['data'])
+                    && request.resource.data.data is list;
+    }
+
+    match /users/{userId}/appData/fn_transferencias {
+      allow read: if isOwner(userId) || isActiveCollaborator(userId);
+      allow write: if (isOwner(userId) || isActiveEditor(userId))
+                    && request.resource.data.keys().hasOnly(['data'])
+                    && request.resource.data.data is list;
+    }
+
+    match /users/{userId}/appData/fn_bancos {
+      allow read: if isOwner(userId) || isActiveCollaborator(userId);
+      allow write: if (isOwner(userId) || isActiveEditor(userId))
+                    && request.resource.data.keys().hasOnly(['data'])
+                    && request.resource.data.data is list;
+    }
+
+    match /users/{userId}/appData/fn_ahorros {
+      allow read: if isOwner(userId) || isActiveCollaborator(userId);
+      allow write: if (isOwner(userId) || isActiveEditor(userId))
+                    && request.resource.data.keys().hasOnly(['data'])
+                    && request.resource.data.data is list;
+    }
+
+    match /users/{userId}/appData/fn_inversiones {
+      allow read: if isOwner(userId) || isActiveCollaborator(userId);
+      allow write: if (isOwner(userId) || isActiveEditor(userId))
+                    && request.resource.data.keys().hasOnly(['data'])
+                    && request.resource.data.data is list;
+    }
+
+    match /users/{userId}/appData/fn_deudas {
+      allow read: if isOwner(userId) || isActiveCollaborator(userId);
+      allow write: if (isOwner(userId) || isActiveEditor(userId))
+                    && request.resource.data.keys().hasOnly(['data'])
+                    && request.resource.data.data is list;
+    }
+
+    match /users/{userId}/appData/fn_presupuestos {
+      allow read: if isOwner(userId) || isActiveCollaborator(userId);
+      allow write: if (isOwner(userId) || isActiveEditor(userId))
+                    && request.resource.data.keys().hasOnly(['data'])
+                    && request.resource.data.data is list;
+    }
+
+    match /users/{userId}/appData/fn_chatsIA {
+      allow read: if isOwner(userId) || isActiveCollaborator(userId);
+      allow write: if (isOwner(userId) || isActiveEditor(userId))
+                    && request.resource.data.keys().hasOnly(['data'])
+                    && request.resource.data.data is list;
+    }
+
+    match /users/{userId}/appData/fn_notifs {
+      allow read: if isOwner(userId) || isActiveCollaborator(userId);
+      allow write: if (isOwner(userId) || isActiveEditor(userId))
+                    && request.resource.data.keys().hasOnly(['data'])
+                    && request.resource.data.data is list;
+    }
+
+    match /users/{userId}/appData/fn_config {
+      allow read: if isOwner(userId) || isActiveCollaborator(userId);
+      allow write: if (isOwner(userId) || isActiveEditor(userId))
+                    && request.resource.data.keys().hasOnly(['data'])
+                    && request.resource.data.data is map;
+    }
+
+    match /users/{userId}/appData/fn_sesiones {
+      allow read: if isOwner(userId) || isActiveCollaborator(userId);
+      allow write: if (isOwner(userId) || isActiveEditor(userId))
+                    && request.resource.data.keys().hasOnly(['data'])
+                    && request.resource.data.data is list;
+    }
+
+    match /users/{userId}/appData/fn_usuario {
+      allow read: if isOwner(userId) || isActiveCollaborator(userId);
+      allow write: if (isOwner(userId) || isActiveEditor(userId))
+                    && request.resource.data.keys().hasOnly(['data'])
+                    && request.resource.data.data is map;
+    }
+
+    // ============================================================
+    // COLABORADORES — cuentas colaborativas / compartidas
+    // Documento: users/{ownerUid}/collaborators/{emailNormalizado}
+    // Campos: email, role ('editor'|'viewer'), status ('pending'|'active'),
+    //         ownerUid, ownerName, ownerEmail, invitedAt, respondedAt, uid
+    // ============================================================
+    match /users/{ownerUid}/collaborators/{collabId} {
+      // El dueño gestiona (lee, invita, cambia rol, revoca) sus propios colaboradores
+      allow read, delete: if isOwner(ownerUid);
+
+      allow create: if isOwner(ownerUid)
+                    && request.resource.data.ownerUid == ownerUid
+                    && request.resource.data.email is string
+                    && request.resource.data.email == request.resource.data.email.lower()
+                    && request.resource.data.role in ['editor', 'viewer']
+                    && request.resource.data.status == 'pending';
+
+      allow update: if isOwner(ownerUid)
+                    // El dueño puede cambiar el rol o reenviar la invitación (vuelve a 'pending')
+                    || (
+                      isSignedIn()
+                      && resource.data.email == myEmail()
+                      && resource.data.status == 'pending'
+                      && request.resource.data.status == 'active'
+                      && request.resource.data.email == resource.data.email
+                      && request.resource.data.role == resource.data.role
+                      && request.resource.data.ownerUid == resource.data.ownerUid
+                      && request.resource.data.uid == request.auth.uid
+                    );
+
+      // El invitado puede leer su propia invitación/membresía (en cualquier cuenta)
+      // para ver invitaciones pendientes y decidir su espacio de trabajo activo.
+      allow read: if isSignedIn() && resource.data.email == myEmail();
+
+      // El invitado puede rechazar una invitación pendiente o abandonar una cuenta activa.
+      allow delete: if isSignedIn() && resource.data.email == myEmail();
+    }
+  }
+}

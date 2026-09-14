@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Política de Privacidad — Finance Nexus SpA</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <style>
+    :root {
+      --bg: #0d0e15;
+      --surface: #171822;
+      --border: rgba(255, 255, 255, 0.08);
+      --text: #f0f0f5;
+      --text-muted: #8b8d9e;
+      --orange: #FF8C42;
+      --coral: #E8503A;
+      --green: #7ED321;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      padding: 40px 20px;
+    }
+    .container {
+      max-width: 840px;
+      margin: 0 auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 48px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 32px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 24px;
+    }
+    .logo {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, var(--coral), var(--orange));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      color: white;
+      font-size: 24px;
+    }
+    h1 { font-size: 26px; color: #fff; font-weight: 700; margin-bottom: 4px; }
+    .meta { font-size: 13px; color: var(--text-muted); }
+    h2 { font-size: 18px; color: var(--orange); margin-top: 32px; margin-bottom: 12px; }
+    p, ul { margin-bottom: 16px; font-size: 15px; color: #d1d3dc; }
+    ul { padding-left: 24px; }
+    li { margin-bottom: 8px; }
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: rgba(126, 211, 33, 0.15);
+      color: var(--green);
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    .footer-links {
+      margin-top: 48px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: var(--text-muted);
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    a { color: var(--orange); text-decoration: none; font-weight: 500; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">N</div>
+      <div>
+        <h1>Política de Privacidad y Tratamiento de Datos</h1>
+        <div class="meta">Finance Nexus SpA — RUT pendiente de confirmación · Santiago, Chile</div>
+      </div>
+    </div>
+
+    <div style="background: rgba(232, 93, 117, 0.12); border: 1px solid rgba(232, 93, 117, 0.4); border-radius: 12px; padding: 14px 18px; margin-bottom: 24px; font-size: 13px; color: #ffb8c4;">
+      <strong>⚠️ ESTADO DOCUMENTAL: BORRADOR OPERATIVO — REQUIERE REVISIÓN LEGAL EN CHILE</strong><br>
+      Versión: 1.0 (Borrador de Trabajo) · Responsable: Isaac Patricio Pasten Díaz · Fecha prevista de revisión: Octubre 2026.<br>
+      <em>Aviso: Este documento describe la implementación técnica preliminar para el entorno MVP conforme a la Ley N° 21.719 de Chile. No sustituye la auditoría y formalización definitiva por un abogado especialista en protección de datos.</em>
+    </div>
+
+    <span class="badge">🛡️ Marco Preliminar Ley 21.719</span>
+
+    <h2>1. Responsable del Tratamiento</h2>
+    <p>El tratamiento de los datos personales recopilados a través de <strong>Finance Nexus</strong> es realizado por <strong>Finance Nexus SpA — RUT pendiente de confirmación</strong>, domiciliada en Santiago de Chile. Para el ejercicio de derechos ARCO o requerimientos de privacidad, escribir a: <code>nexuslabsai.hq@gmail.com</code> (Plazo de respuesta objetivo: 48 horas hábiles).</p>
+
+    <h2>2. Categorías de Datos Recopilados</h2>
+    <ul>
+      <li><strong>Datos de Identificación:</strong> Nombre, email, identificador único (UID) y foto de perfil otorgados mediante Google OAuth 2.0.</li>
+      <li><strong>Datos Financieros Operativos:</strong> Registros de ingresos, gastos, pasivos, presupuestos y metas de ahorro ingresados directamente por el usuario.</li>
+      <li><strong>Datos Técnicos Mínimos:</strong> Identificación local del tipo de sistema operativo y navegador mediante <code>navigator.userAgent</code> con fines estrictos de seguridad de sesión. <em>No se recopila IP pública ni geolocalización.</em></li>
+    </ul>
+
+    <h2>3. Aislamiento Estricto y Almacenamiento en Firestore</h2>
+    <p>Cada organización y usuario dispone de un contenedor lógico propio bajo la ruta <code>/users/{userId}/appData/*</code> en Google Cloud Firestore. Nuestras reglas de seguridad impiden que cualquier otro usuario acceda a datos de terceros, garantizando absoluta confidencialidad comercial.</p>
+
+    <h2>4. Uso de Cookies y Almacenamiento Local</h2>
+    <p>Utilizamos cookies esenciales para la gestión de autenticación y <code>localStorage</code> para recordar preferencias operativas (período financiero, tema visual y consentimiento de privacidad). El usuario puede configurar en cualquier momento su aceptación o rechazo a cookies no esenciales mediante nuestro banner o panel de configuración.</p>
+
+    <h2>5. Derechos ARCO (Acceso, Rectificación, Cancelación y Oposición)</h2>
+    <p>De conformidad con la Ley N° 21.719, el titular tiene derecho a acceder a sus datos personales, solicitar su corrección, oponerse al tratamiento o pedir la eliminación integral de su cuenta y registros enviando una solicitud formal a nuestro canal de soporte: <code>nexuslabsai.hq@gmail.com</code>.</p>
+
+    <h2>6. Canal de Reclamos Interno y SERNAC</h2>
+    <p>Ante cualquier discrepancia en el servicio o ejercicio de derechos del consumidor (Ley N° 19.496):</p>
+    <p><strong>Canal de contacto interno:</strong> <code>nexuslabsai.hq@gmail.com</code>.</p>
+    <p>De forma externa, el consumidor puede recurrir a las herramientas públicas de orientación del Servicio Nacional del Consumidor:</p>
+    <ul>
+      <li><a href="https://www.sernac.cl/portal/617/w3-propertyvalue-58474.html" target="_blank" rel="noopener noreferrer">Portal del Consumidor — Orientación y Reclamos SERNAC (Institución Externa)</a></li>
+      <li><a href="https://www.sernac.cl/portal/618/w3-propertyvalue-59368.html" target="_blank" rel="noopener noreferrer">SERNAC Financiero</a></li>
+    </ul>
+
+    <div class="footer-links">
+      <div>© 2026 Finance Nexus SpA — RUT pendiente de confirmación · Santiago, Chile.</div>
+      <div>
+        <a href="/legal/terminos-y-condiciones.html">Términos y Condiciones (Borrador)</a> · 
+        <a href="/#app">Volver a la App</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

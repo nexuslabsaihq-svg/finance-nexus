@@ -1,0 +1,199 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { useAppData } from '../context/useAppData';
+import { MONTH_NAMES } from '../utils/period';
+
+export default function Header() {
+  const { privacyMode, setPrivacyMode, period, setPeriod, usuario, logout, setActivePage, notificaciones, setNotificaciones, ingresos, gastos, authUser, workspaces, activeUid, isOwnerWorkspace, isViewer, switchWorkspace, pendingInvitations, configuracion, setConfiguracion } = useAppData();
+  
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const notifRef = useRef(null);
+  const userRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (notifRef.current && !notifRef.current.contains(event.target)) setNotifOpen(false);
+      if (userRef.current && !userRef.current.contains(event.target)) setUserMenuOpen(false);
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const searchResults = React.useMemo(() => {
+    if (!searchTerm.trim()) {
+      return [];
+    }
+    const term = searchTerm.toLowerCase();
+    const res = [];
+    ingresos.forEach(i => {
+      if (i.desc.toLowerCase().includes(term) || i.cat.toLowerCase().includes(term)) res.push({...i, type: 'ingreso'});
+    });
+    gastos.forEach(g => {
+      if (g.desc.toLowerCase().includes(term) || g.cat.toLowerCase().includes(term)) res.push({...g, type: 'gasto'});
+    });
+    return res.slice(0, 5);
+  }, [searchTerm, ingresos, gastos]);
+
+  const unreadNotifs = notificaciones.filter(n => !n.read);
+
+  const markAsRead = (id) => {
+    setNotificaciones(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+  };
+
+  return (
+    <header className="header" style={{position: 'relative', width: '100%', flexShrink: 0}}>
+      <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
+        <button className="hamburger" onClick={() => document.body.classList.toggle('sidebar-open')} title="Menú">
+          ☰
+        </button>
+        <div className="greeting">Hola, <span>{authUser?.displayName?.split(' ')[0] || 'Usuario'}</span> 👋</div>
+        {!isOwnerWorkspace && (
+          <span className="badge bp" title="Estás viendo una cuenta colaborativa">
+            🤝 {workspaces.find(w => w.uid === activeUid)?.label || 'Cuenta compartida'} {isViewer ? '· Solo Lectura' : '· Editor'}
+          </span>
+        )}
+        {workspaces.length > 1 && (
+          <select
+            className="fsel"
+            style={{ width: 'auto', fontSize: '11px', padding: '3px 6px' }}
+            value={activeUid || ''}
+            onChange={(e) => switchWorkspace(e.target.value)}
+            title="Cambiar espacio de trabajo"
+          >
+            {workspaces.map(w => (
+              <option key={w.uid} value={w.uid}>{w.isOwner ? 'Mi cuenta' : w.label}</option>
+            ))}
+          </select>
+        )}
+        {pendingInvitations.length > 0 && (
+          <span className="badge bg" style={{cursor:'pointer'}} onClick={() => setActivePage('perfil')} title="Tienes invitaciones pendientes">
+            ✉️ {pendingInvitations.length}
+          </span>
+        )}
+      </div>
+      
+      <div className="search-wrap" style={{ position: 'relative' }}>
+        <span style={{position:'absolute', left: '12px', top:'50%', transform:'translateY(-50%)'}}>🔍</span>
+        <input 
+          type="text" 
+          placeholder="Buscar transacciones, módulos..." 
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={{ width: '100%', height: '100%', paddingLeft: '34px', background: 'transparent', border: 'none', color: 'var(--text)', outline: 'none', fontFamily: 'var(--font)' }}
+        />
+        {searchResults.length > 0 && (
+          <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r2)', marginTop: '8px', zIndex: 100, padding: '8px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
+            {searchResults.map((r, i) => (
+              <div key={i} style={{ padding: '8px', borderBottom: i === searchResults.length - 1 ? 'none' : '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                <div><span style={{ marginRight: '6px' }}>{r.type === 'ingreso' ? '💰' : '💸'}</span>{r.desc}</div>
+                <div style={{ color: r.type === 'ingreso' ? 'var(--green)' : 'var(--pink)', fontFamily: 'var(--mono)' }}>{r.type === 'ingreso' ? '+' : '-'}${r.monto.toLocaleString()}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      
+      <div className="hdr-right">
+        <div className="period-group" style={{display:'flex', alignItems:'center'}}>
+          <select 
+            value={period} 
+            onChange={(e) => setPeriod(e.target.value)}
+            className="pbtn"
+            style={{ background: 'var(--surface2)', color: 'var(--text)', border: '1px solid var(--border)', padding: '4px 10px', borderRadius: 'var(--r3)', outline: 'none', cursor: 'pointer' }}
+          >
+            {MONTH_NAMES.map(p => (
+              <option key={p} value={p}>{p}</option>
+            ))}
+          </select>
+        </div>
+        
+        {/* CAPA DE PRIVACIDAD: Botón anti-mirones */}
+        <button 
+          className="hbtn" 
+          onClick={() => setPrivacyMode(!privacyMode)} 
+          title="Modo Privacidad (Ocultar Saldos)"
+          style={{ color: privacyMode ? 'var(--blue)' : 'var(--text2)' }}
+        >
+          {privacyMode ? '👁️‍🗨️' : '👁️'}
+        </button>
+
+        <button className="hbtn" onClick={() => {
+          const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+          document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
+        }} title="Cambiar tema">
+          🌓
+        </button>
+        
+        <select 
+          className="hbtn" 
+          value={configuracion?.moneda || 'CLP'} 
+          onChange={(e) => setConfiguracion({ ...configuracion, moneda: e.target.value })}
+          style={{ fontSize: 11, fontWeight: 700, fontFamily: 'var(--font)', appearance: 'none', cursor: 'pointer', outline: 'none' }}
+          title="Moneda principal"
+        >
+          <option value="CLP">CLP</option>
+          <option value="USD">USD</option>
+          <option value="EUR">EUR</option>
+          <option value="UF">UF</option>
+        </select>
+        
+        {/* NOTIFICATIONS */}
+        <div ref={notifRef} style={{ position: 'relative' }}>
+          <button className="hbtn" onClick={() => { setNotifOpen(!notifOpen); setUserMenuOpen(false); }}>
+            🔔{unreadNotifs.length > 0 && <span className="notif-dot"></span>}
+          </button>
+          <div className={`notif-panel ${notifOpen ? 'open' : ''}`}>
+            <div className="np-header">
+              <div className="np-title">🔔 Notificaciones</div>
+              <span className="badge bp">{unreadNotifs.length} nuevas</span>
+            </div>
+            {notificaciones.length === 0 ? (
+              <div style={{ padding: '15px', textAlign: 'center', color: 'var(--text2)', fontSize: '13px' }}>No hay notificaciones</div>
+            ) : (
+              notificaciones.map(n => (
+                <div key={n.id} className="np-item" style={{ opacity: n.read ? 0.6 : 1 }}>
+                  <div className="np-dot" style={{ background: `var(--${n.type})` }}></div>
+                  <div style={{ flex: 1 }}>
+                    <div className="np-text">{n.text}</div>
+                    <div className="np-time">{new Date(n.time).toLocaleDateString()}</div>
+                  </div>
+                  {!n.read && <button onClick={() => markAsRead(n.id)} className="btn btn-gh btn-sm" style={{ padding: '2px 6px', fontSize: '10px' }}>✓</button>}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* USER MENU */}
+        <div ref={userRef} style={{ position: 'relative' }}>
+          <div className="user-menu-btn" onClick={() => { setUserMenuOpen(!userMenuOpen); setNotifOpen(false); }} title={`${authUser?.displayName || 'Usuario'}\n${authUser?.email || ''}`}>
+            <div className="uma">{authUser?.photoURL ? <img src={authUser.photoURL} referrerPolicy="no-referrer" style={{width:'100%', height:'100%', borderRadius:'50%'}}/> : (authUser?.displayName?.[0] || 'U')}<span className="uma-online"></span></div>
+            <span className="uma-name">{authUser?.displayName?.split(' ')[0] || 'Usuario'}</span>
+            <span className="uma-arrow">▾</span>
+          </div>
+          <div className={`user-dropdown ${userMenuOpen ? 'open' : ''}`}>
+            <div className="ud-header">
+              <div className="ud-avatar-wrap" onClick={() => { setUserMenuOpen(false); setActivePage('perfil'); }}>
+                <div className="ud-avatar">{authUser?.photoURL ? <img src={authUser.photoURL} referrerPolicy="no-referrer" style={{width:'100%', height:'100%', borderRadius:'50%'}}/> : (authUser?.displayName?.[0] || 'U')}</div>
+              </div>
+              <div>
+                <div className="ud-name">{authUser?.displayName || 'Usuario'}</div>
+                <div className="ud-email">{authUser?.email || 'usuario@email.com'}</div>
+                <div className="ud-plan">⭐ Plan {usuario.plan}</div>
+              </div>
+            </div>
+            <div className="ud-section">
+              <div className="ud-item" onClick={() => { setUserMenuOpen(false); setActivePage('perfil'); }}><span className="ud-item-icon">👤</span><span className="ud-item-label">Mi Perfil</span><span className="ud-item-arrow">›</span></div>
+              <div className="ud-item" onClick={() => { setUserMenuOpen(false); setActivePage('configuracion'); }}><span className="ud-item-icon">⚙️</span><span className="ud-item-label">Configuración</span><span className="ud-item-arrow">›</span></div>
+              <div className="ud-item" onClick={() => { setUserMenuOpen(false); setActivePage('seguridad'); }}><span className="ud-item-icon">🔐</span><span className="ud-item-label">Seguridad y Privacidad</span><span className="ud-item-arrow">›</span></div>
+            </div>
+            <div className="ud-footer">
+              <div className="ud-logout" onClick={logout}><span>🚪</span>Cerrar Sesión</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+}
